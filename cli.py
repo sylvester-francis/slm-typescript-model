@@ -218,7 +218,11 @@ def upload(
     console.print(f"[cyan]Repository:[/cyan] {username}/{model_name}\n")
 
     try:
-        upload_to_hf.main()
+        upload_to_hf.upload_model(
+            model_path=str(model_path),
+            username=username,
+            model_name=model_name
+        )
         console.print("\n[bold green]✓ Upload completed successfully![/bold green]\n")
     except Exception as e:
         console.print(f"\n[bold red]✗ Error during upload: {e}[/bold red]\n")
