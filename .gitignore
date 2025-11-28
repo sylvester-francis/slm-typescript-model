@@ -43,7 +43,6 @@ venv.bak/
 
 # Training data and models (large files)
 data/raw/
-data/processed/
 models/
 *.pt
 *.pth
