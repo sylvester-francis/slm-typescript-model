@@ -1,0 +1,9 @@
+requests
+pandas
+gitpython
+beautifulsoup4
+tqdm
+huggingface_hub
+python-dotenv
+minhash
+nltk
