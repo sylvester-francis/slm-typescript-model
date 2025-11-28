@@ -98,18 +98,19 @@ def train(
         help="Output directory for trained model"
     ),
     epochs: int = typer.Option(3, "--epochs", "-e", help="Number of training epochs"),
-    batch_size: int = typer.Option(4, "--batch-size", "-b", help="Training batch size per device"),
+    batch_size: int = typer.Option(8, "--batch-size", "-b", help="Training batch size per device (optimized for M4 24GB)"),
     gradient_accumulation: int = typer.Option(
-        4,
+        2,
         "--grad-accum",
         "-g",
-        help="Gradient accumulation steps"
+        help="Gradient accumulation steps (optimized for M4)"
     ),
     learning_rate: float = typer.Option(2e-4, "--lr", help="Learning rate"),
     max_seq_length: int = typer.Option(1024, "--max-length", help="Maximum sequence length"),
     lora_r: int = typer.Option(64, "--lora-r", help="LoRA rank"),
     save_steps: int = typer.Option(500, "--save-steps", help="Save checkpoint every N steps"),
     resume: Optional[Path] = typer.Option(None, "--resume", "-r", help="Resume from checkpoint path"),
+    max_samples: Optional[int] = typer.Option(None, "--max-samples", help="Limit dataset to N samples (for testing)"),
 ):
     """
     Train the TypeScript SLM model locally (optimized for Mac M4).
@@ -143,6 +144,7 @@ def train(
             lora_r=lora_r,
             save_steps=save_steps,
             resume_from_checkpoint=str(resume) if resume else None,
+            max_samples=max_samples,
         )
         console.print("\n[bold green]✓ Training completed successfully![/bold green]\n")
     except KeyboardInterrupt:
@@ -277,42 +279,89 @@ def info():
 
 @app.command()
 def pipeline(
-    collect_data: bool = typer.Option(True, "--collect/--no-collect", help="Run data collection"),
-    preprocess_data: bool = typer.Option(True, "--preprocess/--no-preprocess", help="Run preprocessing"),
+    collect_data: bool = typer.Option(None, "--collect/--no-collect", help="Run data collection (auto-detects if None)"),
+    preprocess_data: bool = typer.Option(None, "--preprocess/--no-preprocess", help="Run preprocessing (auto-detects if None)"),
     train_model: bool = typer.Option(True, "--train/--no-train", help="Run training"),
     evaluate_model: bool = typer.Option(True, "--evaluate/--no-evaluate", help="Run evaluation"),
+    max_samples: Optional[int] = typer.Option(None, "--max-samples", help="Limit training dataset to N samples (for testing)"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force re-download and re-preprocess even if data exists"),
 ):
     """
     Run the complete pipeline from data collection to training.
 
     This command orchestrates the full workflow:
-    1. Collect data from GitHub and StackOverflow
-    2. Preprocess and clean the data
+    1. Collect data from GitHub and StackOverflow (skipped if data exists)
+    2. Preprocess and clean the data (skipped if processed data exists)
     3. Train the model
     4. Evaluate the results
+
+    The pipeline is smart - it automatically detects existing data and skips
+    unnecessary steps. Use --force to re-download and re-preprocess.
     """
     console.print("\n[bold magenta]Running complete SLM pipeline...[/bold magenta]\n")
+
+    # Smart detection of existing data
+    raw_data_dir = Path("data/raw")
+    processed_data_dir = Path("data/processed")
+    train_file = processed_data_dir / "train.jsonl"
+
+    # Auto-detect what needs to be done
+    if collect_data is None:
+        if force:
+            collect_data = True
+            console.print("[cyan]ℹ --force flag set: Will re-download data[/cyan]")
+        elif raw_data_dir.exists() and any(raw_data_dir.iterdir()):
+            collect_data = False
+            console.print("[cyan]ℹ Raw data exists, skipping collection (use --force to re-download)[/cyan]")
+        else:
+            collect_data = True
+
+    if preprocess_data is None:
+        if force:
+            preprocess_data = True
+            console.print("[cyan]ℹ --force flag set: Will re-preprocess data[/cyan]")
+        elif train_file.exists():
+            # Check file size to ensure it's not empty
+            if train_file.stat().st_size > 1000:
+                preprocess_data = False
+                with open(train_file) as f:
+                    num_samples = sum(1 for _ in f)
+                console.print(f"[cyan]ℹ Processed data exists ({num_samples} samples), skipping preprocessing (use --force to re-process)[/cyan]")
+            else:
+                preprocess_data = True
+        else:
+            preprocess_data = True
+
+    console.print()
 
     try:
         if collect_data:
             console.print("[bold blue]Step 1/4: Data Collection[/bold blue]")
             data_collection.main()
             console.print("[bold green]✓ Collection complete[/bold green]\n")
+        else:
+            console.print("[bold yellow]⊘ Step 1/4: Data Collection (skipped)[/bold yellow]\n")
 
         if preprocess_data:
             console.print("[bold blue]Step 2/4: Data Preprocessing[/bold blue]")
             data_preprocessing.main()
             console.print("[bold green]✓ Preprocessing complete[/bold green]\n")
+        else:
+            console.print("[bold yellow]⊘ Step 2/4: Data Preprocessing (skipped)[/bold yellow]\n")
 
         if train_model:
             console.print("[bold blue]Step 3/4: Model Training[/bold blue]")
-            training.train()
+            training.train(max_samples=max_samples)
             console.print("[bold green]✓ Training complete[/bold green]\n")
+        else:
+            console.print("[bold yellow]⊘ Step 3/4: Model Training (skipped)[/bold yellow]\n")
 
         if evaluate_model:
             console.print("[bold blue]Step 4/4: Model Evaluation[/bold blue]")
             evaluation.main()
             console.print("[bold green]✓ Evaluation complete[/bold green]\n")
+        else:
+            console.print("[bold yellow]⊘ Step 4/4: Model Evaluation (skipped)[/bold yellow]\n")
 
         console.print("[bold green]✓ Pipeline completed successfully![/bold green]\n")
 
