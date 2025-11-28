@@ -83,10 +83,21 @@ def load_model_and_tokenizer(model_name, max_seq_length=1024):
     tokenizer.padding_side = "right"
     tokenizer.model_max_length = max_seq_length
 
+    # Select dtype based on device capability
+    # CUDA: fp16, MPS: bfloat16, CPU: float32
+    if torch.cuda.is_available():
+        model_dtype = torch.float16  # FP16 for CUDA GPUs
+    elif torch.backends.mps.is_available():
+        model_dtype = torch.bfloat16  # BF16 for Apple Silicon
+    else:
+        model_dtype = torch.float32  # Full precision for CPU
+
+    logger.info(f"Loading model with dtype: {model_dtype}")
+
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=model_dtype,
         device_map="auto",
     )
 
