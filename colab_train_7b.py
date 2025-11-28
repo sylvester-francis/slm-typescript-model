@@ -125,17 +125,27 @@ def main():
     print("📦 Step 3: Installing Dependencies")
     print("="*70)
 
-    dependencies = [
+    # Core dependencies (required)
+    core_dependencies = [
         "transformers>=4.36.0",
         "peft>=0.7.0",
         "trl>=0.7.0",
         "accelerate>=0.25.0",
         "bitsandbytes>=0.41.0",
-        "flash-attn --no-build-isolation",  # For faster attention
     ]
 
-    for dep in dependencies:
+    # Optional: Flash Attention (faster but takes 10-20 min to compile)
+    # Set to False to skip and start training immediately
+    INSTALL_FLASH_ATTN = False  # Change to True if you want faster training
+
+    for dep in core_dependencies:
         run_command(f"pip install -q {dep}", f"Installing {dep.split('>=')[0]}", check=False)
+
+    if INSTALL_FLASH_ATTN:
+        print("\n⚡ Installing Flash Attention (this may take 10-20 minutes)...")
+        run_command("pip install -q flash-attn --no-build-isolation", "Installing Flash Attention", check=False)
+    else:
+        print("\n⏩ Skipping Flash Attention (training will be slightly slower but starts immediately)")
 
     # Step 4: Check environment file
     print("\n" + "="*70)
