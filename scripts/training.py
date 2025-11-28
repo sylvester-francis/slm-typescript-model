@@ -181,7 +181,11 @@ def train(
     peft_config = setup_lora(model, lora_r=lora_r)
     dataset = load_training_data(data_path, max_samples=max_samples)
 
-    # Training arguments optimized for Mac M4 24GB
+    # Training arguments optimized for Mac M4 24GB and Colab GPU
+    # Detect platform for optimal settings
+    is_cuda = torch.cuda.is_available()
+    is_mps = torch.backends.mps.is_available()
+
     training_arguments = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=num_epochs,
@@ -192,8 +196,8 @@ def train(
         logging_steps=logging_steps,
         learning_rate=learning_rate,
         weight_decay=0.001,
-        fp16=True,
-        bf16=False,  # Disabled BF16 when using fp16
+        fp16=is_cuda,  # Use FP16 on CUDA (Colab), not on MPS
+        bf16=is_mps,   # Use BF16 on Apple Silicon only
         max_grad_norm=0.3,
         warmup_ratio=0.03,
         group_by_length=True,
@@ -202,9 +206,13 @@ def train(
         logging_dir=f"{output_dir}/logs",
         report_to="none",  # Disable wandb by default
         gradient_checkpointing=True,
-        dataloader_pin_memory=False,  # Set to False for MPS
-        dataloader_num_workers=0,  # MPS doesn't support multiprocessing dataloaders
+        dataloader_pin_memory=is_cuda,  # True for CUDA, False for MPS
+        dataloader_num_workers=0,  # Keep at 0 for compatibility
         remove_unused_columns=False,  # Keep all columns for custom processing
+        # Explicitly disable TPU/XLA to avoid Colab errors
+        tpu_num_cores=None,
+        use_cpu=False,
+        no_cuda=False,
     )
 
     # Initialize trainer with optimizations
