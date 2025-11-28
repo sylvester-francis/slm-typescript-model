@@ -58,7 +58,6 @@ wandb/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
-*.ipynb
 
 # macOS
 .DS_Store
