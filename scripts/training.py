@@ -416,6 +416,14 @@ def main():
         default=None,
         help="Number of CPU cores for dataset processing (default: auto-detect)"
     )
+
+    parser.add_argument(
+        "--force-cpu",
+        action="store_true",
+        default=False,
+        help="Force CPU training even if GPU is available"
+    )
+
     args = parser.parse_args()
 
     # Run training
