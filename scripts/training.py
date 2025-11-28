@@ -9,6 +9,7 @@ import argparse
 import logging
 from datetime import datetime
 import torch
+torch.backends.cudnn.enabled = False  # Disable cuDNN to reduce memory overhead
 torch.backends.cuda.matmul.allow_tf32 = True  # enable TF32 for slight memory savings
 torch.backends.cudnn.benchmark = True        # let cuDNN pick efficient kernels
 import multiprocessing
@@ -132,7 +133,7 @@ def train(
     batch_size=1,  # Further reduced to fit GTX 1050 Ti memory
     gradient_accumulation_steps=16,  # Increased to keep effective batch size ~16
     learning_rate=2e-4,
-    max_seq_length=512,
+    max_seq_length=256,  # Further reduced to fit GTX 1050 Ti memory
     lora_r=64,
     save_steps=500,
     logging_steps=10,
