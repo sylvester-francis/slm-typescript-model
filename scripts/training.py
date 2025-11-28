@@ -41,16 +41,39 @@ from peft import LoraConfig, get_peft_model
 from trl import SFTTrainer
 from tqdm import tqdm
 
-# Set up logging
+# Set up logging with unbuffered output for real-time monitoring
+import sys
+
+# Force unbuffered stdout/stderr for immediate output in Colab
+sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
+sys.stderr.reconfigure(line_buffering=True) if hasattr(sys.stderr, 'reconfigure') else None
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('training.log'),
-        logging.StreamHandler()
-    ]
+        logging.FileHandler('training.log', mode='a', encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ],
+    force=True
 )
 logger = logging.getLogger(__name__)
+
+# Force flush after each log message for real-time visibility
+class FlushFileHandler(logging.FileHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
+# Replace file handler with flushing version
+for handler in logger.handlers[:]:
+    if isinstance(handler, logging.FileHandler):
+        logger.removeHandler(handler)
+
+flush_handler = FlushFileHandler('training.log', mode='a', encoding='utf-8')
+flush_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(flush_handler)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 def setup_device(force_cpu: bool = False):

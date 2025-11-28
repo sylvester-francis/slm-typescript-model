@@ -125,7 +125,7 @@ def setup_colab():
     # Step 7: Run environment check
     print("\n🔬 Running environment check...")
     if Path('scripts/check_environment.py').exists():
-        run_command('python scripts/check_environment.py', 'Environment check')
+        run_command('python -u scripts/check_environment.py', 'Environment check')
 
     # Final summary
     print("\n" + "="*70)

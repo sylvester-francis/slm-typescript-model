@@ -188,7 +188,7 @@ HF_TOKEN={hf_token}
     print("🔬 Step 5: Checking Environment")
     print("="*70)
 
-    run_command('python scripts/check_environment.py', 'Environment check', check=False)
+    run_command('python -u scripts/check_environment.py', 'Environment check', check=False)
 
     # Step 6: Create/update training script for 7B models
     print("\n" + "="*70)
@@ -206,7 +206,7 @@ HF_TOKEN={hf_token}
     print(f"\nEstimated time: ~2-3 hours on A100 for {DATASET}")
     print(f"Training {model_config['description']}")
 
-    train_cmd = f"""python cli.py train \
+    train_cmd = f"""python -u cli.py train \
   --model {MODEL_NAME} \
   --data {DATASET} \
   --output {OUTPUT_DIR} \
@@ -226,7 +226,7 @@ HF_TOKEN={hf_token}
     print("="*70)
 
     # Update evaluation to use the correct model path
-    eval_cmd = f"python cli.py evaluate --adapter {OUTPUT_DIR} --model {MODEL_NAME}"
+    eval_cmd = f"python -u cli.py evaluate --adapter {OUTPUT_DIR} --model {MODEL_NAME}"
     run_command(eval_cmd, 'Model evaluation', check=False)
 
     # Step 9: Create model card
@@ -321,7 +321,7 @@ https://github.com/sylvester-francis/slm-typescript-model
     print("☁️  Step 10: Uploading to Hugging Face")
     print("="*70)
 
-    upload_cmd = f"python cli.py upload --username {HF_USERNAME} --name {HF_REPO_NAME} --model {OUTPUT_DIR}"
+    upload_cmd = f"python -u cli.py upload --username {HF_USERNAME} --name {HF_REPO_NAME} --model {OUTPUT_DIR}"
     run_command(upload_cmd, 'Hugging Face upload')
 
     # Step 11: Backup to Google Drive

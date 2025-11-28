@@ -66,7 +66,7 @@ print("="*70)
 ```python
 # Train 1.5B TypeScript SLM
 # Dataset: 2k samples | Time: 20-30 min on A100 | Output: typescript-slm-1.5b
-!python colab_train_and_upload.py
+!python -u colab_train_and_upload.py
 ```
 
 ---
@@ -76,7 +76,7 @@ print("="*70)
 ```python
 # Train 7B Standard TypeScript SLM
 # Dataset: 5k samples | Time: 2-3 hours on A100 | Output: typescript-slm-7b
-!python colab_train_7b.py
+!python -u colab_train_7b.py
 ```
 
 ---
@@ -91,7 +91,7 @@ print("="*70)
 !sed -i 's/MODEL_VARIANT = "standard"/MODEL_VARIANT = "reasoning"/' colab_train_7b.py
 
 # Start training
-!python colab_train_7b.py
+!python -u colab_train_7b.py
 ```
 
 ---
@@ -173,14 +173,14 @@ else:
 !sed -i 's/LORA_R = 64/LORA_R = 32/' colab_train_7b.py
 
 # Re-run training
-!python colab_train_7b.py
+!python -u colab_train_7b.py
 ```
 
 ### Check Environment
 
 ```python
 # Verify all dependencies
-!python scripts/check_environment.py
+!python -u scripts/check_environment.py
 
 # Check Python packages
 !pip list | grep -E "transformers|peft|trl|torch"
@@ -195,9 +195,9 @@ else:
 
 | Model | Command | Time (A100) | Output |
 |-------|---------|-------------|---------|
-| 1.5B | `!python colab_train_and_upload.py` | 20-30 min | `typescript-slm-1.5b` |
-| 7B Standard | `!python colab_train_7b.py` | 2-3 hours | `typescript-slm-7b` |
-| 7B Reasoning | Edit then `!python colab_train_7b.py` | 2-3 hours | `typescript-slm-7b-reasoning` |
+| 1.5B | `!python -u colab_train_and_upload.py` | 20-30 min | `typescript-slm-1.5b` |
+| 7B Standard | `!python -u colab_train_7b.py` | 2-3 hours | `typescript-slm-7b` |
+| 7B Reasoning | Edit then `!python -u colab_train_7b.py` | 2-3 hours | `typescript-slm-7b-reasoning` |
 
 **All models automatically upload to HuggingFace:** `sylvester-francis/{model-name}`
 
