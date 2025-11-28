@@ -8,6 +8,11 @@ import os
 import argparse
 import logging
 from datetime import datetime
+
+# Disable XLA/TPU before importing torch (fixes Colab XLA errors)
+os.environ['DISABLE_XLA'] = '1'
+os.environ['USE_TORCH_XLA'] = 'false'
+
 import torch
 torch.backends.cudnn.enabled = False  # Disable cuDNN to reduce memory overhead
 torch.backends.cuda.matmul.allow_tf32 = False  # disable TF32 to reduce memory usage
@@ -209,8 +214,6 @@ def train(
         dataloader_pin_memory=is_cuda,  # True for CUDA, False for MPS
         dataloader_num_workers=0,  # Keep at 0 for compatibility
         remove_unused_columns=False,  # Keep all columns for custom processing
-        # Explicitly disable TPU/XLA to avoid Colab errors
-        tpu_num_cores=None,
         use_cpu=False,
         no_cuda=False,
     )
