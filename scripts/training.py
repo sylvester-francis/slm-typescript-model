@@ -169,6 +169,7 @@ def train(
     learning_rate=2e-4,
     max_seq_length=128,  # Further reduced to fit GTX 1050 Ti memory
     lora_r=64,
+    lora_alpha=16,
     save_steps=500,
     logging_steps=10,
     resume_from_checkpoint=None,
@@ -207,7 +208,7 @@ def train(
     if device.type == "cuda":
         torch.cuda.empty_cache()  # Clear any leftover allocations before training
     model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
-    peft_config = setup_lora(model, lora_r=lora_r)
+    peft_config = setup_lora(model, lora_r=lora_r, lora_alpha=lora_alpha)
     dataset = load_training_data(data_path, max_samples=max_samples)
 
     # Training arguments optimized for Mac M4 24GB and Colab GPU
