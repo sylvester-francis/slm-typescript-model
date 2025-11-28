@@ -35,9 +35,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def setup_device():
-    """Detect and configure the appropriate device (MPS, CUDA, or CPU)"""
-    if torch.backends.mps.is_available():
+def setup_device(force_cpu: bool = False):
+    """Detect and configure the appropriate device (MPS, CUDA, or CPU).
+    If `force_cpu` is True, always return a CPU device regardless of GPU availability.
+    """
+    if force_cpu:
+        device = torch.device("cpu")
+        logger.warning("⚠ Force‑CPU mode enabled: using CPU for training.")
+    elif torch.backends.mps.is_available():
         device = torch.device("mps")
         logger.info("✓ Using Apple Metal Performance Shaders (MPS)")
     elif torch.cuda.is_available():
@@ -168,8 +173,9 @@ def train(
     logger.info("="*70)
 
     # Setup
-    device = setup_device()
-    torch.cuda.empty_cache()  # Clear any leftover allocations before training
+    device = setup_device(force_cpu=args.force_cpu)
+    if device.type == "cuda":
+        torch.cuda.empty_cache()  # Clear any leftover allocations before training
     model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
     peft_config = setup_lora(model, lora_r=lora_r)
     dataset = load_training_data(data_path, max_samples=max_samples)
@@ -303,6 +309,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="Train TypeScript SLM on Mac M4",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--force-cpu",
+        action="store_true",
+        help="Force training on CPU even if a GPU is available (useful for low‑VRAM GPUs)"
     )
 
     parser.add_argument(
