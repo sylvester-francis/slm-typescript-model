@@ -1,53 +1,154 @@
 # TypeScript SLM - Small Language Model
 
-A specialized small language model for TypeScript code generation and understanding, built on top of Qwen 2.5 Coder.
+A specialized small language model for TypeScript code generation and understanding, optimized for React, Next.js, Angular, and Node.js frameworks. Built on Qwen 2.5 Coder 1.5B with LoRA fine-tuning.
 
 ## Features
 
-- 🚀 **Unified CLI** - Simple command-line interface for all operations
-- 📊 **Data Collection** - Automated collection from GitHub and StackOverflow
-- 🔧 **Data Preprocessing** - Clean and prepare training data
-- 🎯 **Local Training** - Optimized for Mac M4 with 24GB RAM (also supports GPU/TPU)
-- 📈 **Evaluation** - Test your model with various prompts
-- ☁️ **Easy Upload** - Share your model on Hugging Face
+- **Unified CLI** - Simple command-line interface for all operations
+- **Intelligent Dataset Filtering** - Quality-scored TypeScript samples focused on popular frameworks
+- **Multi-Platform Support** - Works on Mac M4 (MPS), Google Colab (CUDA), and local GPUs
+- **Memory Optimized** - Efficient training for limited VRAM/RAM environments
+- **Cross-Platform Compatible** - Automatic device detection and configuration
 
 ## Quick Start
 
-### 1. Installation
+### Prerequisites
+
+- Python 3.10+
+- 16GB RAM minimum (24GB recommended for Mac)
+- 40GB VRAM for Google Colab A100 (or 10GB+ for other GPUs)
+
+### Installation
 
 ```bash
 # Clone the repository
-git clone <your-repo>
-cd slm&slr
+git clone https://github.com/sylvester-francis/slm-typescript-model.git
+cd slm-typescript-model
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements-mac.txt
+pip install -r requirements-mac.txt  # or requirements.txt for Colab/Linux
 ```
 
-### 2. Make CLI executable
+### Environment Setup
+
+Create a `.env` file in the project root:
 
 ```bash
-chmod +x cli.py
+# GitHub (required for data collection)
+GITHUB_TOKEN=your_github_token
+
+# StackOverflow (optional)
+STACKOVERFLOW_KEY=your_so_key
+
+# Hugging Face (required for model upload)
+HF_TOKEN=your_hf_token
 ```
 
-### 3. Run the complete pipeline
+## Training Options
+
+### Dataset Sizes
+
+The repository includes intelligent filtering to create multiple dataset tiers:
+
+| Dataset | Samples | Size | Quality Score | Best For |
+|---------|---------|------|---------------|----------|
+| train_small.jsonl | 2,000 | 7.4MB | 47-64 | Quick iteration, testing |
+| train_ultra.jsonl | 3,000 | 11MB | 46-64 | Balanced quality/speed |
+| train_medium.jsonl | 5,000 | 17MB | 44-64 | High quality training |
+| train.jsonl | 8,000 | 27MB | 41-64 | Maximum data |
+
+### Generate Filtered Datasets
 
 ```bash
-# Option 1: Run everything at once
-python cli.py pipeline
-
-# Option 2: Run steps individually
-python cli.py collect      # Collect data
-python cli.py preprocess   # Clean and prepare data
-python cli.py train        # Train the model
-python cli.py evaluate     # Test the model
+# Generate all dataset sizes
+python scripts/filter_dataset.py --small   # 2k samples
+python scripts/filter_dataset.py          # 3k samples (default)
+python scripts/filter_dataset.py --medium # 5k samples
 ```
+
+## Training on Google Colab (Recommended)
+
+### Initial Setup
+
+```python
+# In Colab notebook
+from google.colab import drive
+drive.mount('/content/drive')
+
+%cd /content/drive/MyDrive/
+!git clone https://github.com/sylvester-francis/slm-typescript-model.git slm_code
+%cd slm_code
+!python setup_colab.py
+```
+
+### Training Commands
+
+**For A100 40GB (Recommended settings):**
+
+```bash
+# Fast training (2k samples, 20-30 minutes)
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --batch-size 4 \
+  --grad-accum 8 \
+  --lora-r 32 \
+  --epochs 3
+```
+
+**For T4 16GB:**
+
+```bash
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --batch-size 2 \
+  --grad-accum 16 \
+  --lora-r 16 \
+  --epochs 3
+```
+
+### Expected Training Times on Colab
+
+| Dataset | A100 (40GB) | T4 (16GB) |
+|---------|-------------|-----------|
+| train_small.jsonl (2k) | 20-30 min | 60-90 min |
+| train_ultra.jsonl (3k) | 30-45 min | 90-120 min |
+| train_medium.jsonl (5k) | 50-75 min | 150-180 min |
+
+## Training on Mac M4
+
+**Note:** Mac M4 training is possible but has limitations due to memory constraints and slower MPS performance.
+
+### Working Configuration
+
+```bash
+# Train with small dataset only (others may OOM)
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --batch-size 2 \
+  --grad-accum 8 \
+  --lora-r 16 \
+  --epochs 3
+```
+
+**Expected time:** 10-12 hours for 2k samples
+
+**Known issues:**
+- Very slow first training step (5-10 minutes for MPS kernel compilation)
+- High memory usage (may OOM with datasets larger than 2k samples)
+- Recommended to use Colab instead for faster iteration
 
 ## CLI Commands
+
+### Check Environment
+
+```bash
+# Verify setup and dependencies
+python scripts/check_environment.py
+```
 
 ### System Information
 
@@ -55,11 +156,11 @@ python cli.py evaluate     # Test the model
 python cli.py info
 ```
 
-Shows system information including:
+Shows:
 - Python and PyTorch versions
 - Available device (MPS/CUDA/CPU)
 - Training data status
-- Trained models count
+- GPU/VRAM information
 
 ### Data Collection
 
@@ -67,15 +168,10 @@ Shows system information including:
 python cli.py collect [OPTIONS]
 ```
 
-**Options:**
+Options:
 - `--min-stars, -s` - Minimum GitHub stars (default: 1000)
 - `--repo-limit, -r` - Repositories per framework (default: 5)
 - `--so-limit` - StackOverflow questions (default: 50)
-
-**Example:**
-```bash
-python cli.py collect --min-stars 2000 --repo-limit 10
-```
 
 ### Data Preprocessing
 
@@ -83,14 +179,9 @@ python cli.py collect --min-stars 2000 --repo-limit 10
 python cli.py preprocess [OPTIONS]
 ```
 
-**Options:**
+Options:
 - `--input, -i` - Input directory (default: data/raw)
 - `--output, -o` - Output directory (default: data/processed)
-
-**Example:**
-```bash
-python cli.py preprocess --input data/raw --output data/processed
-```
 
 ### Training
 
@@ -98,38 +189,38 @@ python cli.py preprocess --input data/raw --output data/processed
 python cli.py train [OPTIONS]
 ```
 
-**Options:**
-- `--model, -m` - Base model name (default: Qwen/Qwen2.5-Coder-1.5B-Instruct)
-- `--data, -d` - Training data path (default: data/processed/train.jsonl)
-- `--output, -o` - Output directory (default: ./models/typescript-slm-1.5b)
-- `--epochs, -e` - Number of epochs (default: 3)
+Key Options:
+- `--data, -d` - Training data path
 - `--batch-size, -b` - Batch size (default: 4)
-- `--grad-accum, -g` - Gradient accumulation steps (default: 4)
-- `--lr` - Learning rate (default: 2e-4)
-- `--max-length` - Max sequence length (default: 1024)
-- `--lora-r` - LoRA rank (default: 64)
-- `--save-steps` - Save checkpoint interval (default: 500)
+- `--grad-accum, -g` - Gradient accumulation (default: 8)
+- `--lora-r` - LoRA rank (default: 32)
+- `--epochs, -e` - Number of epochs (default: 3)
+- `--max-samples` - Limit dataset size for testing
 - `--resume, -r` - Resume from checkpoint
 
-**Examples:**
+Examples:
 
-Basic training:
 ```bash
-python cli.py train
-```
+# Basic training with defaults
+python cli.py train --data data/processed/train_small.jsonl
 
-Custom configuration:
-```bash
+# Custom configuration
 python cli.py train \
-  --epochs 5 \
+  --data data/processed/train_medium.jsonl \
   --batch-size 8 \
-  --lr 1e-4 \
-  --output ./models/my-model
-```
+  --grad-accum 4 \
+  --lora-r 64 \
+  --epochs 5
 
-Resume from checkpoint:
-```bash
-python cli.py train --resume ./models/typescript-slm-1.5b/checkpoint-1000
+# Quick test with 1000 samples
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --max-samples 1000 \
+  --epochs 1
+
+# Resume from checkpoint
+python cli.py train \
+  --resume models/typescript-slm-1.5b/checkpoint-100
 ```
 
 ### Evaluation
@@ -138,32 +229,19 @@ python cli.py train --resume ./models/typescript-slm-1.5b/checkpoint-1000
 python cli.py evaluate [OPTIONS]
 ```
 
-**Options:**
-- `--adapter, -a` - Path to adapter (default: ./models/typescript-slm-1.5b)
-- `--model, -m` - Base model name (default: Qwen/Qwen2.5-Coder-1.5B-Instruct)
-
-**Example:**
-```bash
-python cli.py evaluate --adapter ./models/my-model
-```
+Options:
+- `--adapter, -a` - Path to trained adapter
+- `--model, -m` - Base model name
 
 ### Upload to Hugging Face
 
 ```bash
-python cli.py upload [OPTIONS]
-```
+# Set token first
+export HF_TOKEN=your_token
 
-**Options:**
-- `--model, -m` - Model directory path
-- `--username, -u` - Hugging Face username (required)
-- `--name, -n` - Model name on HF (default: typescript-slm-1.5b)
-
-**Example:**
-```bash
-# Set your HF token first
-export HF_TOKEN=your_token_here
-
-python cli.py upload --username myusername --name my-ts-model
+python cli.py upload \
+  --username your-username \
+  --name typescript-slm-1.5b
 ```
 
 ### Complete Pipeline
@@ -172,219 +250,218 @@ python cli.py upload --username myusername --name my-ts-model
 python cli.py pipeline [OPTIONS]
 ```
 
-**Options:**
-- `--collect/--no-collect` - Enable/disable data collection (default: enabled)
-- `--preprocess/--no-preprocess` - Enable/disable preprocessing (default: enabled)
-- `--train/--no-train` - Enable/disable training (default: enabled)
-- `--evaluate/--no-evaluate` - Enable/disable evaluation (default: enabled)
+The pipeline is smart and automatically skips steps if data already exists.
 
-**Examples:**
+Options:
+- `--collect/--no-collect` - Run data collection
+- `--preprocess/--no-preprocess` - Run preprocessing
+- `--train/--no-train` - Run training
+- `--evaluate/--no-evaluate` - Run evaluation
+- `--max-samples` - Limit dataset size
+- `--force, -f` - Force re-download and re-process
 
-Run everything:
+Examples:
+
 ```bash
+# Run everything (auto-skips existing data)
 python cli.py pipeline
+
+# Force re-download everything
+python cli.py pipeline --force
+
+# Only train with existing data
+python cli.py pipeline --no-collect --no-preprocess --no-evaluate
+
+# Quick test with limited samples
+python cli.py pipeline --max-samples 1000 --no-evaluate
 ```
 
-Skip data collection (use existing data):
+## Project Structure
+
+```
+slm-typescript-model/
+├── cli.py                      # Main CLI entry point
+├── setup_colab.py              # Colab setup automation
+├── COLAB_GUIDE.md             # Detailed Colab instructions
+├── scripts/
+│   ├── __init__.py            # Package init
+│   ├── training.py            # Training logic
+│   ├── filter_dataset.py      # Dataset filtering
+│   ├── data_collection.py     # GitHub & SO collection
+│   ├── data_preprocessing.py  # Data cleaning
+│   ├── evaluation.py          # Model evaluation
+│   ├── check_environment.py   # Environment validation
+│   └── upload_to_hf.py       # HF upload
+├── data/
+│   ├── raw/                   # Raw collected data
+│   └── processed/             # Filtered training data
+│       ├── train_small.jsonl  # 2k samples
+│       ├── train_ultra.jsonl  # 3k samples
+│       ├── train_medium.jsonl # 5k samples
+│       └── train.jsonl        # 8k samples
+├── models/                    # Trained models
+└── .env                       # Environment variables
+
+```
+
+## Troubleshooting
+
+### CUDA Out of Memory (Colab)
+
+**Solution 1:** Reduce batch size and LoRA rank
 ```bash
-python cli.py pipeline --no-collect
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --batch-size 2 \
+  --grad-accum 16 \
+  --lora-r 16
 ```
 
-Only train and evaluate:
+**Solution 2:** Restart runtime to clear memory
+- Runtime → Restart runtime
+- Re-run setup cells
+
+**Solution 3:** Use memory fragmentation fix
+```python
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+```
+
+### MPS Out of Memory (Mac M4)
+
+**This is expected.** Mac M4 with 24GB RAM cannot handle datasets larger than 2k samples.
+
+**Solutions:**
+- Use train_small.jsonl only
+- Reduce batch size to 1: `--batch-size 1 --grad-accum 16`
+- Train on Colab instead (recommended)
+
+### Training Stuck on First Step (Mac M4)
+
+**This is normal.** The first step takes 5-10 minutes while MPS compiles kernels. Subsequent steps will be faster (but still slow at ~10-20 seconds each).
+
+### Import Errors
+
 ```bash
-python cli.py pipeline --no-collect --no-preprocess
+# Missing dependencies
+pip install -r requirements-mac.txt
+
+# Clear Python cache
+rm -rf scripts/__pycache__
 ```
 
-## Help
+### XLA/TPU Warnings (Colab)
 
-Get help for any command:
+These warnings are normal and can be ignored. The training script handles them automatically.
+
+## Performance Benchmarks
+
+### Google Colab A100 (40GB VRAM)
+
+| Configuration | Time per Step | Total Time (2k samples, 3 epochs) |
+|--------------|---------------|-----------------------------------|
+| Batch 4, LoRA 32 | ~6-8 sec | 20-30 min |
+| Batch 8, LoRA 64 | ~10-12 sec | 35-45 min |
+| Batch 16, LoRA 128 | OOM | N/A |
+
+### Mac M4 (24GB RAM)
+
+| Configuration | Time per Step | Issues |
+|--------------|---------------|--------|
+| Batch 2, LoRA 16 | ~90 sec | Works with train_small.jsonl only |
+| Batch 4, LoRA 32 | OOM | Out of memory |
+| Batch 8+ | OOM | Out of memory |
+
+## Model Quality
+
+The filtered datasets focus on high-quality TypeScript code with proper type annotations, focusing on:
+
+- **React** (43-58% of samples) - Components, hooks, context
+- **Angular** (33-50% of samples) - Services, directives, modules
+- **Next.js** (21-23% of samples) - Pages, API routes, SSR
+- **TypeScript** (9-16% of samples) - Advanced types, generics
+- **Node.js** (6-11% of samples) - Express, NestJS, APIs
+
+Quality scoring prioritizes:
+- Interface and type definitions
+- Proper type annotations (not overusing `any`)
+- Complete modules with imports/exports
+- Framework-specific patterns
+- Production-quality code from popular repositories
+
+## Tips and Best Practices
+
+### 1. Start Small
+
+Always test with train_small.jsonl first:
+```bash
+python cli.py train \
+  --data data/processed/train_small.jsonl \
+  --epochs 1 \
+  --max-samples 500
+```
+
+### 2. Monitor Training
 
 ```bash
-# General help
-python cli.py --help
+# Real-time monitoring
+tail -f training.log
 
-# Command-specific help
-python cli.py train --help
-python cli.py collect --help
+# Check GPU usage (Colab)
+watch -n 1 nvidia-smi
 ```
 
-## Environment Setup
+### 3. Save Checkpoints
 
-### Required Environment Variables
+The CLI automatically saves checkpoints every 500 steps. Keep the `models/` directory backed up.
 
-Create a `.env` file in the project root:
+### 4. Use Colab for Production
 
-```bash
-# GitHub (required for data collection)
-GITHUB_TOKEN=your_github_token
+For final training runs, use Google Colab with A100:
+- 10-20x faster than Mac M4
+- No memory constraints
+- Can train full 8k dataset
 
-# StackOverflow (optional, increases rate limits)
-STACKOVERFLOW_KEY=your_so_key
+### 5. Iterate Quickly
 
-# Hugging Face (required for upload)
-HF_TOKEN=your_hf_token
-```
+Use the smallest dataset for experimentation, then scale up once confident:
+1. Test with 500 samples, 1 epoch
+2. Train with 2k samples, 3 epochs
+3. Final training with 5k-8k samples, 3 epochs
 
-### Getting Tokens
+## Getting Tokens
 
-**GitHub Token:**
+### GitHub Token
 1. Go to https://github.com/settings/tokens
 2. Generate new token (classic)
 3. Select `repo` scope
 4. Copy token to `.env`
 
-**Hugging Face Token:**
+### Hugging Face Token
 1. Go to https://huggingface.co/settings/tokens
 2. Create new token
 3. Select `write` access
 4. Copy token to `.env`
 
-## Hardware Requirements
+## Documentation
 
-### Minimum (CPU training - slow)
-- 16GB RAM
-- 50GB free disk space
-
-### Recommended (Mac M4)
-- Mac M4 with 24GB unified memory
-- 50GB free disk space
-- **Training time:** ~2-4 hours for 60K samples
-
-### Optimal (Cloud TPU/GPU)
-- Google Colab with TPU v2
-- **Training time:** ~36-60 minutes for 60K samples
-
-## Project Structure
-
-```
-slm&slr/
-├── cli.py                  # Main CLI entry point
-├── scripts/
-│   ├── data_collection.py  # GitHub & StackOverflow collection
-│   ├── data_preprocessing.py  # Data cleaning
-│   ├── training.py         # Model training (formerly train_mac.py)
-│   ├── evaluation.py       # Model evaluation
-│   └── upload_to_hf.py    # Hugging Face upload
-├── data/
-│   ├── raw/               # Raw collected data
-│   └── processed/         # Cleaned training data
-├── models/                # Trained models
-├── notebooks/             # Jupyter notebooks for Colab
-├── requirements-mac.txt   # Python dependencies
-└── .env                   # Environment variables (create this)
-```
-
-## Training Performance
-
-| Hardware | Time (3 epochs, 60K samples) | Cost |
-|----------|----------------------------|------|
-| Mac M4 24GB | 2-4 hours | Free |
-| Colab TPU v2 | 36-60 min | Free |
-| Colab T4 GPU | 1.5-3 hours | Free |
-
-## Troubleshooting
-
-### "MPS backend out of memory"
-Reduce batch size:
-```bash
-python cli.py train --batch-size 2 --grad-accum 8
-```
-
-### "No module named 'typer'"
-Install dependencies:
-```bash
-pip install -r requirements-mac.txt
-```
-
-### "GITHUB_TOKEN not found"
-Create `.env` file with your tokens (see Environment Setup above)
-
-### Training is slow
-Check device detection:
-```bash
-python cli.py info
-```
-
-Should show "Apple Metal (MPS)" for Mac M4.
-
-## Tips
-
-### 1. Test with small dataset first
-
-```bash
-# Create small test dataset
-head -n 1000 data/processed/train.jsonl > data/processed/train_test.jsonl
-
-# Quick test run
-python cli.py train --data data/processed/train_test.jsonl --epochs 1
-```
-
-### 2. Monitor training
-
-```bash
-# In another terminal
-tail -f training.log
-```
-
-### 3. Run overnight
-
-```bash
-# Run in background
-nohup python cli.py train > output.log 2>&1 &
-
-# Check progress
-tail -f output.log
-```
-
-### 4. Save disk space
-
-The CLI automatically keeps only the last 3 checkpoints to save space.
-
-## Examples
-
-### Complete workflow from scratch
-
-```bash
-# 1. Set up environment
-echo "GITHUB_TOKEN=your_token" > .env
-echo "HF_TOKEN=your_token" >> .env
-
-# 2. Install dependencies
-pip install -r requirements-mac.txt
-
-# 3. Run everything
-python cli.py pipeline
-
-# 4. Upload to Hugging Face
-python cli.py upload --username myusername
-```
-
-### Custom training configuration
-
-```bash
-# Train with specific settings
-python cli.py train \
-  --model Qwen/Qwen2.5-Coder-1.5B-Instruct \
-  --data data/processed/train.jsonl \
-  --output ./models/custom-model \
-  --epochs 5 \
-  --batch-size 6 \
-  --grad-accum 3 \
-  --lr 1e-4 \
-  --max-length 2048
-```
-
-### Resume interrupted training
-
-```bash
-# Training was interrupted at step 1500
-python cli.py train --resume ./models/typescript-slm-1.5b/checkpoint-1500
-```
+- [COLAB_GUIDE.md](COLAB_GUIDE.md) - Comprehensive Colab training guide
+- [TRAINING_MAC.md](TRAINING_MAC.md) - Mac-specific training notes
 
 ## Contributing
 
-Feel free to open issues or submit PRs!
+Contributions welcome! Please:
+1. Test changes on both Mac and Colab
+2. Update relevant documentation
+3. Follow existing code style
+4. Add tests for new features
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - See LICENSE file for details
+
+## Acknowledgments
+
+- Built on [Qwen 2.5 Coder](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct)
+- Uses [PEFT](https://github.com/huggingface/peft) for efficient fine-tuning
+- Training pipeline powered by [TRL](https://github.com/huggingface/trl)
