@@ -32,7 +32,7 @@ def main():
 
     # Configuration
     HF_USERNAME = "sylvester-francis"
-    DATASET = "data/processed/train_small.jsonl"  # Change to train_medium.jsonl or train.jsonl for larger datasets
+    DATASET = "data/processed/train.jsonl"  # Change to train_medium.jsonl or train.jsonl for larger datasets
     BATCH_SIZE = 4
     GRAD_ACCUM = 8
     LORA_R = 32
@@ -202,7 +202,7 @@ HF_TOKEN={hf_token}
     print("\n" + "="*70)
     print("✅ PIPELINE COMPLETE!")
     print("="*70)
-    print(f"\n📦 Model uploaded to: https://huggingface.co/{HF_USERNAME}/typescript-slm-1.5b")
+    print(f"\n📦 Model uploaded to: https://huggingface.co/{HF_USERNAME}/typescript-slm-medium-1.5b")
     print(f"💾 Model backup saved to: Google Drive/typescript-slm-model.tar.gz")
     print(f"📁 Model directory: {os.getcwd()}/models/typescript-slm-1.5b/")
     print("\n" + "="*70)
