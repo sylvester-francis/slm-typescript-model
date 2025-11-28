@@ -72,7 +72,45 @@ python scripts/filter_dataset.py --medium # 5k samples
 
 ## Training on Google Colab (Recommended)
 
-### Initial Setup
+### Option 1: One-Command Automated Training (Easiest)
+
+**First, add your tokens to Colab Secrets:**
+1. Click the key icon 🔑 in the left sidebar of Colab
+2. Add these secrets:
+   - `GITHUB_TOKEN`: Your GitHub personal access token
+   - `HF_TOKEN`: Your Hugging Face token
+   - `STACKOVERFLOW_KEY`: Your StackOverflow key (optional)
+
+**Then run the automated pipeline:**
+
+```python
+# In Colab notebook
+from google.colab import drive
+drive.mount('/content/drive')
+
+%cd /content/drive/MyDrive/
+!git clone https://github.com/sylvester-francis/slm-typescript-model.git slm_code
+%cd slm_code
+
+# Run complete pipeline: setup + train + evaluate + upload
+!python colab_train_and_upload.py
+```
+
+This automated script will:
+- Mount Google Drive
+- Clone/update repository
+- Install dependencies
+- Create .env file from Colab Secrets
+- Train the model (A100: 20-30 min)
+- Evaluate the model
+- Upload to Hugging Face (username: sylvester-francis)
+- Backup to Google Drive
+
+**Note:** If .env file already exists in the repo, it will use that instead of creating a new one.
+
+### Option 2: Manual Step-by-Step Setup
+
+#### Initial Setup
 
 ```python
 # In Colab notebook
