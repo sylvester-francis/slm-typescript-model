@@ -14,6 +14,19 @@ os.environ['DISABLE_XLA'] = '1'
 os.environ['USE_TORCH_XLA'] = 'false'
 
 import torch
+
+# Monkey-patch to prevent XLA errors in Colab
+# Colab auto-loads torch_xla but doesn't properly expose torch.xla
+# This prevents transformers from trying to use it
+if not hasattr(torch, 'xla'):
+    import sys
+    from types import SimpleNamespace
+    # Create a mock xla module that does nothing
+    mock_xla = SimpleNamespace()
+    mock_xla.core = SimpleNamespace()
+    mock_xla.core.xla_model = SimpleNamespace()
+    torch.xla = mock_xla
+
 torch.backends.cudnn.enabled = False  # Disable cuDNN to reduce memory overhead
 torch.backends.cuda.matmul.allow_tf32 = False  # disable TF32 to reduce memory usage
 torch.backends.cudnn.benchmark = True        # let cuDNN pick efficient kernels
