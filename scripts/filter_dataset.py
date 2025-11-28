@@ -182,12 +182,28 @@ def filter_dataset(input_path, output_path, target_samples=8000, min_score=15):
 
 
 if __name__ == '__main__':
+    import sys
+
     input_file = Path('data/processed/train.jsonl')
-    output_file = Path('data/processed/train_filtered.jsonl')
+    output_file = Path('data/processed/train_ultra.jsonl')
+
+    # Check if we want ultra-filtered version
+    target = 3000  # Ultra-filtered: top 3k samples
+    min_score = 35  # Much higher threshold
+
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--medium':
+            target = 5000
+            min_score = 25
+            output_file = Path('data/processed/train_medium.jsonl')
+        elif sys.argv[1] == '--small':
+            target = 2000
+            min_score = 40
+            output_file = Path('data/processed/train_small.jsonl')
 
     filter_dataset(
         input_path=input_file,
         output_path=output_file,
-        target_samples=8000,  # Aim for 8k high-quality samples
-        min_score=15          # Minimum quality threshold
+        target_samples=target,
+        min_score=min_score
     )
