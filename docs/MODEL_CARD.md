@@ -105,9 +105,9 @@ from peft import PeftModel
 # Load base model and tokenizer
 base_model = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
-    base_model,
-    device_map="auto",
-    torch_dtype="auto"
+base_model,
+device_map="auto",
+torch_dtype="auto"
 )
 tokenizer = AutoTokenizer.from_pretrained(base_model)
 
@@ -122,11 +122,11 @@ prompt = """Write a React component that fetches user data and displays it in a 
 
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 outputs = model.generate(
-    **inputs,
-    max_new_tokens=256,
-    temperature=0.7,
-    do_sample=True,
-    top_p=0.95
+**inputs,
+max_new_tokens=256,
+temperature=0.7,
+do_sample=True,
+top_p=0.95
 )
 
 generated_code = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -233,11 +233,11 @@ https://github.com/sylvester-francis/slm-typescript-model
 
 ```bibtex
 @article{qwen2.5,
-  title={Qwen2.5-Coder Technical Report},
-  author={Qwen Team},
-  year={2024},
-  journal={arXiv preprint},
-  url={https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct}
+title={Qwen2.5-Coder Technical Report},
+author={Qwen Team},
+year={2024},
+journal={arXiv preprint},
+url={https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct}
 }
 ```
 
@@ -245,12 +245,12 @@ https://github.com/sylvester-francis/slm-typescript-model
 
 ```bibtex
 @misc{vonwerra2022trl,
-  title={{TRL: Transformer Reinforcement Learning}},
-  author={Leandro von Werra and Younes Belkada and Lewis Tunstall and Edward Beeching and Tristan Thrush and Nathan Lambert and Shengyi Huang and Kashif Rasul and Quentin Gallou{\'e}dec},
-  year={2020},
-  journal={GitHub repository},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/huggingface/trl}}
+title={{TRL: Transformer Reinforcement Learning}},
+author={Leandro von Werra and Younes Belkada and Lewis Tunstall and Edward Beeching and Tristan Thrush and Nathan Lambert and Shengyi Huang and Kashif Rasul and Quentin Gallou{\'e}dec},
+year={2020},
+journal={GitHub repository},
+publisher={GitHub},
+howpublished={\url{https://github.com/huggingface/trl}}
 }
 ```
 
@@ -258,10 +258,10 @@ https://github.com/sylvester-francis/slm-typescript-model
 
 ```bibtex
 @article{hu2021lora,
-  title={LoRA: Low-Rank Adaptation of Large Language Models},
-  author={Hu, Edward J and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
-  journal={arXiv preprint arXiv:2106.09685},
-  year={2021}
+title={LoRA: Low-Rank Adaptation of Large Language Models},
+author={Hu, Edward J and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+journal={arXiv preprint arXiv:2106.09685},
+year={2021}
 }
 ```
 

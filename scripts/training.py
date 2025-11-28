@@ -19,23 +19,23 @@ import torch
 # Colab auto-loads torch_xla but doesn't properly expose torch.xla
 # This prevents transformers from trying to use it
 if not hasattr(torch, 'xla'):
-    import sys
-    from types import SimpleNamespace
-    # Create a mock xla module that does nothing
-    mock_xla = SimpleNamespace()
-    mock_xla.core = SimpleNamespace()
-    mock_xla.core.xla_model = SimpleNamespace()
-    torch.xla = mock_xla
+import sys
+from types import SimpleNamespace
+# Create a mock xla module that does nothing
+mock_xla = SimpleNamespace()
+mock_xla.core = SimpleNamespace()
+mock_xla.core.xla_model = SimpleNamespace()
+torch.xla = mock_xla
 
-torch.backends.cudnn.enabled = False  # Disable cuDNN to reduce memory overhead
-torch.backends.cuda.matmul.allow_tf32 = False  # disable TF32 to reduce memory usage
-torch.backends.cudnn.benchmark = True        # let cuDNN pick efficient kernels
+torch.backends.cudnn.enabled = False # Disable cuDNN to reduce memory overhead
+torch.backends.cuda.matmul.allow_tf32 = False # disable TF32 to reduce memory usage
+torch.backends.cudnn.benchmark = True # let cuDNN pick efficient kernels
 import multiprocessing
 from datasets import load_dataset
 from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    TrainingArguments,
+AutoModelForCausalLM,
+AutoTokenizer,
+TrainingArguments,
 )
 from peft import LoraConfig, get_peft_model
 from trl import SFTTrainer
@@ -49,26 +49,26 @@ sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure'
 sys.stderr.reconfigure(line_buffering=True) if hasattr(sys.stderr, 'reconfigure') else None
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('training.log', mode='a', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ],
-    force=True
+level=logging.INFO,
+format='%(asctime)s - %(levelname)s - %(message)s',
+handlers=[
+logging.FileHandler('training.log', mode='a', encoding='utf-8'),
+logging.StreamHandler(sys.stdout)
+],
+force=True
 )
 logger = logging.getLogger(__name__)
 
 # Force flush after each log message for real-time visibility
 class FlushFileHandler(logging.FileHandler):
-    def emit(self, record):
-        super().emit(record)
-        self.flush()
+def emit(self, record):
+super().emit(record)
+self.flush()
 
 # Replace file handler with flushing version
 for handler in logger.handlers[:]:
-    if isinstance(handler, logging.FileHandler):
-        logger.removeHandler(handler)
+if isinstance(handler, logging.FileHandler):
+logger.removeHandler(handler)
 
 flush_handler = FlushFileHandler('training.log', mode='a', encoding='utf-8')
 flush_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -77,426 +77,426 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 def setup_device(force_cpu: bool = False):
-    """Detect and configure the appropriate device (MPS, CUDA, or CPU).
-    If `force_cpu` is True, always return a CPU device regardless of GPU availability.
-    """
-    if force_cpu:
-        device = torch.device("cpu")
-        logger.warning("⚠ Force‑CPU mode enabled: using CPU for training.")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-        logger.info("✓ Using Apple Metal Performance Shaders (MPS)")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-        logger.info(f"✓ Using CUDA GPU: {torch.cuda.get_device_name(0)}")
-    else:
-        device = torch.device("cpu")
-        logger.warning("⚠ No GPU detected, using CPU (will be slow!)")
+"""Detect and configure the appropriate device (MPS, CUDA, or CPU).
+If `force_cpu` is True, always return a CPU device regardless of GPU availability.
+"""
+if force_cpu:
+device = torch.device("cpu")
+logger.warning("[WARNING] Force‑CPU mode enabled: using CPU for training.")
+elif torch.backends.mps.is_available():
+device = torch.device("mps")
+logger.info("[OK] Using Apple Metal Performance Shaders (MPS)")
+elif torch.cuda.is_available():
+device = torch.device("cuda")
+logger.info(f"[OK] Using CUDA GPU: {torch.cuda.get_device_name(0)}")
+else:
+device = torch.device("cpu")
+logger.warning("[WARNING] No GPU detected, using CPU (will be slow!)")
 
-    return device
+return device
 
 
 def load_model_and_tokenizer(model_name, max_seq_length=1024):
-    """Load model and tokenizer with appropriate settings"""
-    logger.info(f"Loading model: {model_name}")
+"""Load model and tokenizer with appropriate settings"""
+logger.info(f"Loading model: {model_name}")
 
-    # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
-    tokenizer.model_max_length = max_seq_length
+# Load tokenizer
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
+tokenizer.model_max_length = max_seq_length
 
-    # Select dtype based on device capability
-    # CUDA: fp16, MPS: bfloat16, CPU: float32
-    if torch.cuda.is_available():
-        model_dtype = torch.float16  # FP16 for CUDA GPUs
-    elif torch.backends.mps.is_available():
-        model_dtype = torch.bfloat16  # BF16 for Apple Silicon
-    else:
-        model_dtype = torch.float32  # Full precision for CPU
+# Select dtype based on device capability
+# CUDA: fp16, MPS: bfloat16, CPU: float32
+if torch.cuda.is_available():
+model_dtype = torch.float16 # FP16 for CUDA GPUs
+elif torch.backends.mps.is_available():
+model_dtype = torch.bfloat16 # BF16 for Apple Silicon
+else:
+model_dtype = torch.float32 # Full precision for CPU
 
-    logger.info(f"Loading model with dtype: {model_dtype}")
+logger.info(f"Loading model with dtype: {model_dtype}")
 
-    # Load model
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype=model_dtype,
-        device_map="auto",
-    )
+# Load model
+model = AutoModelForCausalLM.from_pretrained(
+model_name,
+torch_dtype=model_dtype,
+device_map="auto",
+)
 
-    # Enable gradient checkpointing to save memory
-    model.gradient_checkpointing_enable()
+# Enable gradient checkpointing to save memory
+model.gradient_checkpointing_enable()
 
-    logger.info(f"✓ Model loaded successfully")
-    logger.info(f"✓ Tokenizer max length: {max_seq_length}")
+logger.info(f"[OK] Model loaded successfully")
+logger.info(f"[OK] Tokenizer max length: {max_seq_length}")
 
-    return model, tokenizer
+return model, tokenizer
 
 
 def setup_lora(model, lora_r=64, lora_alpha=16, lora_dropout=0.1):
-    """Configure LoRA for parameter-efficient fine-tuning"""
-    logger.info("Setting up LoRA configuration")
+"""Configure LoRA for parameter-efficient fine-tuning"""
+logger.info("Setting up LoRA configuration")
 
-    peft_config = LoraConfig(
-        lora_alpha=lora_alpha,
-        lora_dropout=lora_dropout,
-        r=lora_r,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-    )
+peft_config = LoraConfig(
+lora_alpha=lora_alpha,
+lora_dropout=lora_dropout,
+r=lora_r,
+bias="none",
+task_type="CAUSAL_LM",
+target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+)
 
-    logger.info(f"✓ LoRA config: r={lora_r}, alpha={lora_alpha}, dropout={lora_dropout}")
-    return peft_config
+logger.info(f"[OK] LoRA config: r={lora_r}, alpha={lora_alpha}, dropout={lora_dropout}")
+return peft_config
 
 
 def load_training_data(data_path, max_samples=None):
-    """Load the training dataset with parallel processing"""
-    logger.info(f"Loading dataset from: {data_path}")
+"""Load the training dataset with parallel processing"""
+logger.info(f"Loading dataset from: {data_path}")
 
-    if not os.path.exists(data_path):
-        raise FileNotFoundError(f"Dataset not found: {data_path}")
+if not os.path.exists(data_path):
+raise FileNotFoundError(f"Dataset not found: {data_path}")
 
-    # Use num_proc for parallel loading
-    num_proc = min(multiprocessing.cpu_count(), 8)  # Cap at 8 for stability
-    logger.info(f"Using {num_proc} processes for data loading")
+# Use num_proc for parallel loading
+num_proc = min(multiprocessing.cpu_count(), 8) # Cap at 8 for stability
+logger.info(f"Using {num_proc} processes for data loading")
 
-    dataset = load_dataset(
-        "json",
-        data_files=data_path,
-        split="train",
-        num_proc=num_proc
-    )
+dataset = load_dataset(
+"json",
+data_files=data_path,
+split="train",
+num_proc=num_proc
+)
 
-    if max_samples and max_samples < len(dataset):
-        logger.info(f"Limiting dataset from {len(dataset)} to {max_samples} samples")
-        dataset = dataset.select(range(max_samples))
+if max_samples and max_samples < len(dataset):
+logger.info(f"Limiting dataset from {len(dataset)} to {max_samples} samples")
+dataset = dataset.select(range(max_samples))
 
-    logger.info(f"✓ Loaded {len(dataset)} training samples")
+logger.info(f"[OK] Loaded {len(dataset)} training samples")
 
-    return dataset
+return dataset
 
 
 def formatting_func(example):
-    """Format dataset examples for training"""
-    return example["text"]
+"""Format dataset examples for training"""
+return example["text"]
 
 
 def train(
-    model_name="Qwen/Qwen2.5-Coder-1.5B-Instruct",
-    data_path="data/processed/train.jsonl",
-    output_dir="./models/typescript-slm-1.5b",
-    num_epochs=3,
-    batch_size=1,  # Further reduced to fit GTX 1050 Ti memory
-    gradient_accumulation_steps=32,  # Increased to keep effective batch size ~32
-    learning_rate=2e-4,
-    max_seq_length=128,  # Further reduced to fit GTX 1050 Ti memory
-    lora_r=64,
-    lora_alpha=16,
-    save_steps=500,
-    logging_steps=10,
-    resume_from_checkpoint=None,
-    max_samples=None,
-    use_packing=False,  # Disabled packing to save memory
-    dataset_num_proc=None,  # Auto-detect CPU cores
-    force_cpu: bool = False,
+model_name="Qwen/Qwen2.5-Coder-1.5B-Instruct",
+data_path="data/processed/train.jsonl",
+output_dir="./models/typescript-slm-1.5b",
+num_epochs=3,
+batch_size=1, # Further reduced to fit GTX 1050 Ti memory
+gradient_accumulation_steps=32, # Increased to keep effective batch size ~32
+learning_rate=2e-4,
+max_seq_length=128, # Further reduced to fit GTX 1050 Ti memory
+lora_r=64,
+lora_alpha=16,
+save_steps=500,
+logging_steps=10,
+resume_from_checkpoint=None,
+max_samples=None,
+use_packing=False, # Disabled packing to save memory
+dataset_num_proc=None, # Auto-detect CPU cores
+force_cpu: bool = False,
 ):
-    """Main training function"""
+"""Main training function"""
 
-    # Auto-detect number of CPU cores if not specified
-    if dataset_num_proc is None:
-        dataset_num_proc = min(multiprocessing.cpu_count(), 8)
+# Auto-detect number of CPU cores if not specified
+if dataset_num_proc is None:
+dataset_num_proc = min(multiprocessing.cpu_count(), 8)
 
-    # Print configuration
-    logger.info("="*70)
-    logger.info("Training Configuration:")
-    logger.info(f"  Model: {model_name}")
-    logger.info(f"  Dataset: {data_path}")
-    logger.info(f"  Output: {output_dir}")
-    logger.info(f"  Epochs: {num_epochs}")
-    logger.info(f"  Batch size: {batch_size}")
-    logger.info(f"  Gradient accumulation: {gradient_accumulation_steps}")
-    logger.info(f"  Effective batch size: {batch_size * gradient_accumulation_steps}")
-    logger.info(f"  Learning rate: {learning_rate}")
-    logger.info(f"  Max sequence length: {max_seq_length}")
-    logger.info(f"  LoRA rank: {lora_r}")
-    logger.info(f"  Sequence packing: {use_packing}")
-    logger.info(f"  CPU cores for preprocessing: {dataset_num_proc}")
-    if max_samples:
-        logger.info(f"  Max samples: {max_samples} (limited dataset)")
-    logger.info("="*70)
+# Print configuration
+logger.info("="*70)
+logger.info("Training Configuration:")
+logger.info(f" Model: {model_name}")
+logger.info(f" Dataset: {data_path}")
+logger.info(f" Output: {output_dir}")
+logger.info(f" Epochs: {num_epochs}")
+logger.info(f" Batch size: {batch_size}")
+logger.info(f" Gradient accumulation: {gradient_accumulation_steps}")
+logger.info(f" Effective batch size: {batch_size * gradient_accumulation_steps}")
+logger.info(f" Learning rate: {learning_rate}")
+logger.info(f" Max sequence length: {max_seq_length}")
+logger.info(f" LoRA rank: {lora_r}")
+logger.info(f" Sequence packing: {use_packing}")
+logger.info(f" CPU cores for preprocessing: {dataset_num_proc}")
+if max_samples:
+logger.info(f" Max samples: {max_samples} (limited dataset)")
+logger.info("="*70)
 
-    # Setup
-    device = setup_device(force_cpu=force_cpu)
-    if device.type == "cuda":
-        torch.cuda.empty_cache()  # Clear any leftover allocations before training
-    model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
-    peft_config = setup_lora(model, lora_r=lora_r, lora_alpha=lora_alpha)
-    dataset = load_training_data(data_path, max_samples=max_samples)
+# Setup
+device = setup_device(force_cpu=force_cpu)
+if device.type == "cuda":
+torch.cuda.empty_cache() # Clear any leftover allocations before training
+model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
+peft_config = setup_lora(model, lora_r=lora_r, lora_alpha=lora_alpha)
+dataset = load_training_data(data_path, max_samples=max_samples)
 
-    # Training arguments optimized for Mac M4 24GB and Colab GPU
-    # Detect platform for optimal settings
-    is_cuda = torch.cuda.is_available()
-    is_mps = torch.backends.mps.is_available()
+# Training arguments optimized for Mac M4 24GB and Colab GPU
+# Detect platform for optimal settings
+is_cuda = torch.cuda.is_available()
+is_mps = torch.backends.mps.is_available()
 
-    training_arguments = TrainingArguments(
-        output_dir=output_dir,
-        num_train_epochs=num_epochs,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=gradient_accumulation_steps,
-        optim="adamw_torch",
-        save_steps=save_steps,
-        logging_steps=logging_steps,
-        learning_rate=learning_rate,
-        weight_decay=0.001,
-        fp16=is_cuda,  # Use FP16 on CUDA (Colab), not on MPS
-        bf16=is_mps,   # Use BF16 on Apple Silicon only
-        max_grad_norm=0.3,
-        warmup_ratio=0.03,
-        group_by_length=True,
-        lr_scheduler_type="cosine",
-        save_total_limit=3,  # Keep only last 3 checkpoints to save disk space
-        logging_dir=f"{output_dir}/logs",
-        report_to="none",  # Disable wandb by default
-        gradient_checkpointing=True,
-        dataloader_pin_memory=is_cuda,  # True for CUDA, False for MPS
-        dataloader_num_workers=0,  # Keep at 0 for compatibility
-        remove_unused_columns=False,  # Keep all columns for custom processing
-        use_cpu=False,
-        no_cuda=False,
-    )
+training_arguments = TrainingArguments(
+output_dir=output_dir,
+num_train_epochs=num_epochs,
+per_device_train_batch_size=batch_size,
+gradient_accumulation_steps=gradient_accumulation_steps,
+optim="adamw_torch",
+save_steps=save_steps,
+logging_steps=logging_steps,
+learning_rate=learning_rate,
+weight_decay=0.001,
+fp16=is_cuda, # Use FP16 on CUDA (Colab), not on MPS
+bf16=is_mps, # Use BF16 on Apple Silicon only
+max_grad_norm=0.3,
+warmup_ratio=0.03,
+group_by_length=True,
+lr_scheduler_type="cosine",
+save_total_limit=3, # Keep only last 3 checkpoints to save disk space
+logging_dir=f"{output_dir}/logs",
+report_to="none", # Disable wandb by default
+gradient_checkpointing=True,
+dataloader_pin_memory=is_cuda, # True for CUDA, False for MPS
+dataloader_num_workers=0, # Keep at 0 for compatibility
+remove_unused_columns=False, # Keep all columns for custom processing
+use_cpu=False,
+no_cuda=False,
+)
 
-    # Initialize trainer with optimizations
-    logger.info("Initializing SFTTrainer...")
+# Initialize trainer with optimizations
+logger.info("Initializing SFTTrainer...")
 
-    # Build trainer kwargs based on what TRL version supports
-    import inspect
+# Build trainer kwargs based on what TRL version supports
+import inspect
 
-    # Start with basic parameters that should work in all versions
-    trainer_kwargs = {
-        "model": model,
-        "train_dataset": dataset,
-        "peft_config": peft_config,
-        "args": training_arguments,
-    }
+# Start with basic parameters that should work in all versions
+trainer_kwargs = {
+"model": model,
+"train_dataset": dataset,
+"peft_config": peft_config,
+"args": training_arguments,
+}
 
-    # Check if SFTTrainer supports these parameters
-    trainer_signature = inspect.signature(SFTTrainer.__init__)
+# Check if SFTTrainer supports these parameters
+trainer_signature = inspect.signature(SFTTrainer.__init__)
 
-    # Try different parameter names for tokenizer (changed across versions)
-    if "processing_class" in trainer_signature.parameters:
-        trainer_kwargs["processing_class"] = tokenizer
-    elif "tokenizer" in trainer_signature.parameters:
-        trainer_kwargs["tokenizer"] = tokenizer
+# Try different parameter names for tokenizer (changed across versions)
+if "processing_class" in trainer_signature.parameters:
+trainer_kwargs["processing_class"] = tokenizer
+elif "tokenizer" in trainer_signature.parameters:
+trainer_kwargs["tokenizer"] = tokenizer
 
-    # Add formatting function if supported
-    if "formatting_func" in trainer_signature.parameters:
-        trainer_kwargs["formatting_func"] = formatting_func
-    elif "dataset_text_field" in trainer_signature.parameters:
-        trainer_kwargs["dataset_text_field"] = "text"
+# Add formatting function if supported
+if "formatting_func" in trainer_signature.parameters:
+trainer_kwargs["formatting_func"] = formatting_func
+elif "dataset_text_field" in trainer_signature.parameters:
+trainer_kwargs["dataset_text_field"] = "text"
 
-    # Add max_seq_length if supported
-    if "max_seq_length" in trainer_signature.parameters:
-        trainer_kwargs["max_seq_length"] = max_seq_length
+# Add max_seq_length if supported
+if "max_seq_length" in trainer_signature.parameters:
+trainer_kwargs["max_seq_length"] = max_seq_length
 
-    # Add parallel processing if supported
-    if "dataset_num_proc" in trainer_signature.parameters:
-        trainer_kwargs["dataset_num_proc"] = dataset_num_proc
-        trainer_kwargs["dataset_batch_size"] = 1000
-        logger.info(f"✓ Parallel dataset processing enabled ({dataset_num_proc} cores)")
-    else:
-        logger.warning("⚠ Parallel dataset processing not supported (consider upgrading TRL)")
+# Add parallel processing if supported
+if "dataset_num_proc" in trainer_signature.parameters:
+trainer_kwargs["dataset_num_proc"] = dataset_num_proc
+trainer_kwargs["dataset_batch_size"] = 1000
+logger.info(f"[OK] Parallel dataset processing enabled ({dataset_num_proc} cores)")
+else:
+logger.warning("[WARNING] Parallel dataset processing not supported (consider upgrading TRL)")
 
-    # Add packing if supported
-    if "packing" in trainer_signature.parameters and use_packing:
-        trainer_kwargs["packing"] = True
-        logger.info("✓ Sequence packing enabled")
-    elif use_packing:
-        logger.warning("⚠ Sequence packing not supported (consider upgrading TRL)")
+# Add packing if supported
+if "packing" in trainer_signature.parameters and use_packing:
+trainer_kwargs["packing"] = True
+logger.info("[OK] Sequence packing enabled")
+elif use_packing:
+logger.warning("[WARNING] Sequence packing not supported (consider upgrading TRL)")
 
-    trainer = SFTTrainer(**trainer_kwargs)
+trainer = SFTTrainer(**trainer_kwargs)
 
-    # Start training
-    logger.info("\n" + "="*70)
-    logger.info("Starting training...")
-    logger.info("="*70 + "\n")
+# Start training
+logger.info("\n" + "="*70)
+logger.info("Starting training...")
+logger.info("="*70 + "\n")
 
-    start_time = datetime.now()
+start_time = datetime.now()
 
-    try:
-        if resume_from_checkpoint:
-            logger.info(f"Resuming from checkpoint: {resume_from_checkpoint}")
-            trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-        else:
-            trainer.train()
+try:
+if resume_from_checkpoint:
+logger.info(f"Resuming from checkpoint: {resume_from_checkpoint}")
+trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+else:
+trainer.train()
 
-        end_time = datetime.now()
-        duration = end_time - start_time
+end_time = datetime.now()
+duration = end_time - start_time
 
-        logger.info("\n" + "="*70)
-        logger.info("✓ Training completed successfully!")
-        logger.info(f"  Duration: {duration}")
-        logger.info("="*70 + "\n")
+logger.info("\n" + "="*70)
+logger.info("[OK] Training completed successfully!")
+logger.info(f" Duration: {duration}")
+logger.info("="*70 + "\n")
 
-    except KeyboardInterrupt:
-        logger.warning("\n⚠ Training interrupted by user")
-        logger.info("Saving current checkpoint...")
-        trainer.save_model(f"{output_dir}/interrupted_checkpoint")
-        logger.info(f"✓ Checkpoint saved to: {output_dir}/interrupted_checkpoint")
-        return
+except KeyboardInterrupt:
+logger.warning("\n[WARNING] Training interrupted by user")
+logger.info("Saving current checkpoint...")
+trainer.save_model(f"{output_dir}/interrupted_checkpoint")
+logger.info(f"[OK] Checkpoint saved to: {output_dir}/interrupted_checkpoint")
+return
 
-    except Exception as e:
-        logger.error(f"\n❌ Training failed with error: {e}")
-        raise
+except Exception as e:
+logger.error(f"\n[ERROR] Training failed with error: {e}")
+raise
 
-    # Save final model
-    logger.info("Saving final model...")
-    trainer.model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
-    logger.info(f"✓ Model saved to: {output_dir}")
+# Save final model
+logger.info("Saving final model...")
+trainer.model.save_pretrained(output_dir)
+tokenizer.save_pretrained(output_dir)
+logger.info(f"[OK] Model saved to: {output_dir}")
 
-    # Print summary
-    logger.info("\n" + "="*70)
-    logger.info("Training Summary:")
-    logger.info(f"  Total samples: {len(dataset)}")
-    logger.info(f"  Total epochs: {num_epochs}")
-    logger.info(f"  Training time: {duration}")
-    logger.info(f"  Model saved to: {output_dir}")
-    logger.info("="*70)
+# Print summary
+logger.info("\n" + "="*70)
+logger.info("Training Summary:")
+logger.info(f" Total samples: {len(dataset)}")
+logger.info(f" Total epochs: {num_epochs}")
+logger.info(f" Training time: {duration}")
+logger.info(f" Model saved to: {output_dir}")
+logger.info("="*70)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Train TypeScript SLM on Mac M4",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    # Force CPU flag (added earlier)
-    parser.add_argument(
-        "--force-cpu",
-        action="store_true",
-        help="Force training on CPU even if a GPU is available (useful for low‑VRAM GPUs)"
-    )
-    # Low‑VRAM defaults
-    parser.add_argument(
-        "--model-name",
-        type=str,
-        default="Qwen/Qwen2.5-Coder-1.5B-Instruct",
-        help="Base model name from Hugging Face"
-    )
-    parser.add_argument(
-        "--data-path",
-        type=str,
-        default="data/processed/train.jsonl",
-        help="Path to training data (JSONL file)"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="./models/typescript-slm-1.5b",
-        help="Output directory for trained model"
-    )
-    parser.add_argument(
-        "--epochs",
-        type=int,
-        default=3,
-        help="Number of training epochs"
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=1,
-        help="Training batch size per device (default: 1 for low‑VRAM GPU)"
-    )
-    parser.add_argument(
-        "--gradient-accumulation",
-        type=int,
-        default=32,
-        help="Gradient accumulation steps (default: 32 to keep effective batch size ~32)"
-    )
-    parser.add_argument(
-        "--learning-rate",
-        type=float,
-        default=2e-4,
-        help="Learning rate"
-    )
-    parser.add_argument(
-        "--max-seq-length",
-        type=int,
-        default=128,
-        help="Maximum sequence length (reduced for low‑VRAM)"
-    )
-    parser.add_argument(
-        "--lora-r",
-        type=int,
-        default=64,
-        help="LoRA rank"
-    )
-    parser.add_argument(
-        "--save-steps",
-        type=int,
-        default=500,
-        help="Save checkpoint every N steps"
-    )
-    parser.add_argument(
-        "--resume",
-        type=str,
-        default=None,
-        help="Path to checkpoint to resume from"
-    )
-    parser.add_argument(
-        "--max-samples",
-        type=int,
-        default=None,
-        help="Limit dataset to N samples (useful for testing)"
-    )
-    parser.add_argument(
-        "--use-packing",
-        action="store_true",
-        default=False,
-        help="Pack multiple sequences together (default: disabled for low‑VRAM)"
-    )
-    parser.add_argument(
-        "--no-packing",
-        dest="use_packing",
-        action="store_false",
-        help="Disable sequence packing"
-    )
-    parser.add_argument(
-        "--num-proc",
-        type=int,
-        default=None,
-        help="Number of CPU cores for dataset processing (default: auto-detect)"
-    )
+parser = argparse.ArgumentParser(
+description="Train TypeScript SLM on Mac M4",
+formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+# Force CPU flag (added earlier)
+parser.add_argument(
+"--force-cpu",
+action="store_true",
+help="Force training on CPU even if a GPU is available (useful for low‑VRAM GPUs)"
+)
+# Low‑VRAM defaults
+parser.add_argument(
+"--model-name",
+type=str,
+default="Qwen/Qwen2.5-Coder-1.5B-Instruct",
+help="Base model name from Hugging Face"
+)
+parser.add_argument(
+"--data-path",
+type=str,
+default="data/processed/train.jsonl",
+help="Path to training data (JSONL file)"
+)
+parser.add_argument(
+"--output-dir",
+type=str,
+default="./models/typescript-slm-1.5b",
+help="Output directory for trained model"
+)
+parser.add_argument(
+"--epochs",
+type=int,
+default=3,
+help="Number of training epochs"
+)
+parser.add_argument(
+"--batch-size",
+type=int,
+default=1,
+help="Training batch size per device (default: 1 for low‑VRAM GPU)"
+)
+parser.add_argument(
+"--gradient-accumulation",
+type=int,
+default=32,
+help="Gradient accumulation steps (default: 32 to keep effective batch size ~32)"
+)
+parser.add_argument(
+"--learning-rate",
+type=float,
+default=2e-4,
+help="Learning rate"
+)
+parser.add_argument(
+"--max-seq-length",
+type=int,
+default=128,
+help="Maximum sequence length (reduced for low‑VRAM)"
+)
+parser.add_argument(
+"--lora-r",
+type=int,
+default=64,
+help="LoRA rank"
+)
+parser.add_argument(
+"--save-steps",
+type=int,
+default=500,
+help="Save checkpoint every N steps"
+)
+parser.add_argument(
+"--resume",
+type=str,
+default=None,
+help="Path to checkpoint to resume from"
+)
+parser.add_argument(
+"--max-samples",
+type=int,
+default=None,
+help="Limit dataset to N samples (useful for testing)"
+)
+parser.add_argument(
+"--use-packing",
+action="store_true",
+default=False,
+help="Pack multiple sequences together (default: disabled for low‑VRAM)"
+)
+parser.add_argument(
+"--no-packing",
+dest="use_packing",
+action="store_false",
+help="Disable sequence packing"
+)
+parser.add_argument(
+"--num-proc",
+type=int,
+default=None,
+help="Number of CPU cores for dataset processing (default: auto-detect)"
+)
 
-    parser.add_argument(
-        "--force-cpu",
-        action="store_true",
-        default=False,
-        help="Force CPU training even if GPU is available"
-    )
+parser.add_argument(
+"--force-cpu",
+action="store_true",
+default=False,
+help="Force CPU training even if GPU is available"
+)
 
-    args = parser.parse_args()
+args = parser.parse_args()
 
-    # Run training
-    train(
-        model_name=args.model_name,
-        data_path=args.data_path,
-        output_dir=args.output_dir,
-        num_epochs=args.epochs,
-        batch_size=args.batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation,
-        learning_rate=args.learning_rate,
-        max_seq_length=args.max_seq_length,
-        lora_r=args.lora_r,
-        save_steps=args.save_steps,
-        resume_from_checkpoint=args.resume,
-        max_samples=args.max_samples,
-        use_packing=args.use_packing,
-        dataset_num_proc=args.num_proc,
-        force_cpu=args.force_cpu,
-    )
+# Run training
+train(
+model_name=args.model_name,
+data_path=args.data_path,
+output_dir=args.output_dir,
+num_epochs=args.epochs,
+batch_size=args.batch_size,
+gradient_accumulation_steps=args.gradient_accumulation,
+learning_rate=args.learning_rate,
+max_seq_length=args.max_seq_length,
+lora_r=args.lora_r,
+save_steps=args.save_steps,
+resume_from_checkpoint=args.resume,
+max_samples=args.max_samples,
+use_packing=args.use_packing,
+dataset_num_proc=args.num_proc,
+force_cpu=args.force_cpu,
+)
 
 
 if __name__ == "__main__":
-    main()
+main()
 

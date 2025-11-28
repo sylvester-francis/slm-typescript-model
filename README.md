@@ -28,9 +28,9 @@ drive.mount('/content/drive')
 !git clone https://github.com/sylvester-francis/slm-typescript-model.git slm_code
 %cd slm_code
 
-# 2. Add tokens to Colab Secrets (click 🔑 icon):
-#    - GITHUB_TOKEN
-#    - HF_TOKEN
+# 2. Add tokens to Colab Secrets (click icon):
+# - GITHUB_TOKEN
+# - HF_TOKEN
 
 # 3. Run training (20-30 min on A100)
 !python colab_train_and_upload.py
@@ -50,8 +50,8 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install -r requirements-mac.txt  # macOS
-pip install -r requirements.txt      # Linux/Colab
+pip install -r requirements-mac.txt # macOS
+pip install -r requirements.txt # Linux/Colab
 
 # Setup environment
 cp .env.example .env
@@ -137,16 +137,16 @@ from peft import PeftModel
 # Load base model
 base_model = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
-    base_model,
-    device_map="auto",
-    torch_dtype="auto"
+base_model,
+device_map="auto",
+torch_dtype="auto"
 )
 tokenizer = AutoTokenizer.from_pretrained(base_model)
 
 # Load trained adapter
 model = PeftModel.from_pretrained(
-    model,
-    "sylvester-francis/typescript-slm-1.5b"
+model,
+"sylvester-francis/typescript-slm-1.5b"
 )
 
 # Generate code
@@ -163,49 +163,49 @@ print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 python cli.py pipeline
 
 # Individual steps
-python cli.py collect          # Collect training data
-python cli.py preprocess       # Preprocess data
-python cli.py train            # Train model
-python cli.py evaluate         # Evaluate model
-python cli.py upload           # Upload to HuggingFace
+python cli.py collect # Collect training data
+python cli.py preprocess # Preprocess data
+python cli.py train # Train model
+python cli.py evaluate # Evaluate model
+python cli.py upload # Upload to HuggingFace
 
 # Custom training
 python cli.py train \
-  --data data/processed/train_medium.jsonl \
-  --batch-size 4 \
-  --grad-accum 8 \
-  --lora-r 32 \
-  --epochs 3
+--data data/processed/train_medium.jsonl \
+--batch-size 4 \
+--grad-accum 8 \
+--lora-r 32 \
+--epochs 3
 ```
 
 ## Project Structure
 
 ```
 slm-typescript-model/
-├── README.md                    # This file
-├── docs/                        # Documentation
-│   ├── COLAB.md                # Colab training guide
-│   ├── TRAINING_7B.md          # 7B models guide
-│   ├── TRAINING_MAC.md         # Mac M-series training
-│   └── MODEL_CARD.md           # HuggingFace model card
-├── cli.py                       # Main CLI interface
-├── colab_train_and_upload.py   # 1.5B automated training
-├── colab_train_7b.py           # 7B automated training
-├── scripts/                     # Core functionality
-│   ├── training.py             # Training logic
-│   ├── filter_dataset.py       # Dataset quality filtering
-│   ├── data_collection.py      # GitHub/SO data collection
-│   ├── data_preprocessing.py   # Data cleaning
-│   ├── evaluation.py           # Model evaluation
-│   └── upload_to_hf.py        # HuggingFace upload
-├── data/
-│   ├── raw/                    # Raw collected data
-│   └── processed/              # Filtered training datasets
-│       ├── train_small.jsonl   # 2k samples (quick iteration)
-│       ├── train_ultra.jsonl   # 3k samples (balanced)
-│       ├── train_medium.jsonl  # 5k samples (recommended)
-│       └── train.jsonl         # 8k samples (maximum quality)
-└── models/                      # Trained models
+README.md # This file
+docs/ # Documentation
+COLAB.md # Colab training guide
+TRAINING_7B.md # 7B models guide
+TRAINING_MAC.md # Mac M-series training
+MODEL_CARD.md # HuggingFace model card
+cli.py # Main CLI interface
+colab_train_and_upload.py # 1.5B automated training
+colab_train_7b.py # 7B automated training
+scripts/ # Core functionality
+training.py # Training logic
+filter_dataset.py # Dataset quality filtering
+data_collection.py # GitHub/SO data collection
+data_preprocessing.py # Data cleaning
+evaluation.py # Model evaluation
+upload_to_hf.py # HuggingFace upload
+data/
+raw/ # Raw collected data
+processed/ # Filtered training datasets
+train_small.jsonl # 2k samples (quick iteration)
+train_ultra.jsonl # 3k samples (balanced)
+train_medium.jsonl # 5k samples (recommended)
+train.jsonl # 8k samples (maximum quality)
+models/ # Trained models
 ```
 
 ## Documentation
@@ -329,10 +329,10 @@ If you use these models in your research or project, please cite:
 
 ```bibtex
 @software{typescript_slm_2025,
-  author = {Francis, Sylvester},
-  title = {TypeScript SLM: Fine-tuned Small Language Models for TypeScript},
-  year = {2025},
-  url = {https://github.com/sylvester-francis/slm-typescript-model}
+author = {Francis, Sylvester},
+title = {TypeScript SLM: Fine-tuned Small Language Models for TypeScript},
+year = {2025},
+url = {https://github.com/sylvester-francis/slm-typescript-model}
 }
 ```
 
@@ -350,7 +350,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 - **Repository**: https://github.com/sylvester-francis/slm-typescript-model
 - **Models**:
-  - [typescript-slm-1.5b](https://huggingface.co/sylvester-francis/typescript-slm-1.5b)
-  - [typescript-slm-7b](https://huggingface.co/sylvester-francis/typescript-slm-7b)
-  - [typescript-slm-7b-reasoning](https://huggingface.co/sylvester-francis/typescript-slm-7b-reasoning)
+- [typescript-slm-1.5b](https://huggingface.co/sylvester-francis/typescript-slm-1.5b)
+- [typescript-slm-7b](https://huggingface.co/sylvester-francis/typescript-slm-7b)
+- [typescript-slm-7b-reasoning](https://huggingface.co/sylvester-francis/typescript-slm-7b-reasoning)
 - **Issues**: https://github.com/sylvester-francis/slm-typescript-model/issues

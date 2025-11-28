@@ -67,13 +67,13 @@ This will:
 ```bash
 # Using the CLI
 python cli.py train \
-  --data data/processed/train.jsonl \
-  --output ./models/my-model \
-  --epochs 3 \
-  --batch-size 4 \
-  --grad-accum 4 \
-  --lr 2e-4 \
-  --max-length 1024
+--data data/processed/train.jsonl \
+--output ./models/my-model \
+--epochs 3 \
+--batch-size 4 \
+--grad-accum 4 \
+--lr 2e-4 \
+--max-length 1024
 ```
 
 > **CLI Benefits:** The new CLI provides better help text, auto-completion, and consistent command structure across all operations.
@@ -176,13 +176,13 @@ After training completes, you'll find:
 
 ```
 models/typescript-slm-1.5b/
-├── adapter_config.json      # LoRA adapter configuration
-├── adapter_model.safetensors # LoRA adapter weights
-├── tokenizer_config.json    # Tokenizer configuration
-├── tokenizer.json           # Tokenizer vocabulary
-├── special_tokens_map.json  # Special tokens
-├── logs/                    # Training logs
-└── checkpoint-*/            # Saved checkpoints
+adapter_config.json # LoRA adapter configuration
+adapter_model.safetensors # LoRA adapter weights
+tokenizer_config.json # Tokenizer configuration
+tokenizer.json # Tokenizer vocabulary
+special_tokens_map.json # Special tokens
+logs/ # Training logs
+checkpoint-*/ # Saved checkpoints
 ```
 
 ## Tips

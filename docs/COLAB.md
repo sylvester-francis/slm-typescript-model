@@ -37,7 +37,7 @@ Open https://colab.research.google.com/ and create a new notebook.
 
 ### 2. Add Tokens to Colab Secrets
 
-Click the 🔑 key icon in the left sidebar and add:
+Click the key icon in the left sidebar and add:
 
 ```
 GITHUB_TOKEN: your_github_personal_access_token
@@ -95,7 +95,7 @@ Includes chain-of-thought reasoning for complex problem-solving and debugging.
 
 Edit `colab_train_7b.py` line 31:
 ```python
-MODEL_VARIANT = "reasoning"  # Change from "standard"
+MODEL_VARIANT = "reasoning" # Change from "standard"
 ```
 
 Then run:
@@ -113,9 +113,9 @@ Edit the training script to use different dataset sizes:
 
 ```python
 # In colab_train_and_upload.py or colab_train_7b.py
-DATASET = "data/processed/train_small.jsonl"   # 2k samples, fastest
-DATASET = "data/processed/train_medium.jsonl"  # 5k samples, recommended
-DATASET = "data/processed/train.jsonl"         # 8k samples, maximum quality
+DATASET = "data/processed/train_small.jsonl" # 2k samples, fastest
+DATASET = "data/processed/train_medium.jsonl" # 5k samples, recommended
+DATASET = "data/processed/train.jsonl" # 8k samples, maximum quality
 ```
 
 ### Memory Optimization
@@ -142,15 +142,15 @@ Advanced users can customize training via CLI:
 
 ```bash
 python cli.py train \
-  --model Qwen/Qwen2.5-Coder-7B-Instruct \
-  --data data/processed/train_medium.jsonl \
-  --batch-size 2 \
-  --grad-accum 16 \
-  --lora-r 64 \
-  --lora-alpha 128 \
-  --lr 1e-4 \
-  --max-length 2048 \
-  --epochs 3
+--model Qwen/Qwen2.5-Coder-7B-Instruct \
+--data data/processed/train_medium.jsonl \
+--batch-size 2 \
+--grad-accum 16 \
+--lora-r 64 \
+--lora-alpha 128 \
+--lr 1e-4 \
+--max-length 2048 \
+--epochs 3
 ```
 
 ## Monitoring Training
@@ -201,8 +201,8 @@ In a separate cell while training:
 
 ```python
 !python cli.py upload \
-  --username your-hf-username \
-  --name typescript-slm-custom
+--username your-hf-username \
+--name typescript-slm-custom
 ```
 
 ## Troubleshooting
@@ -259,7 +259,7 @@ In a separate cell while training:
 **Symptoms:** "HF_TOKEN not found" or authentication errors
 
 **Solutions:**
-1. Verify tokens in Colab Secrets (click 🔑 icon)
+1. Verify tokens in Colab Secrets (click icon)
 2. Check token permissions on Hugging Face
 3. Ensure secret names match exactly: `GITHUB_TOKEN`, `HF_TOKEN`
 
@@ -275,8 +275,8 @@ In a separate cell while training:
 
 # Resume training
 !python cli.py train \
-  --resume models/typescript-slm-1.5b/checkpoint-1000 \
-  --data data/processed/train_small.jsonl
+--resume models/typescript-slm-1.5b/checkpoint-1000 \
+--data data/processed/train_small.jsonl
 ```
 
 ## Performance Benchmarks
@@ -357,9 +357,9 @@ python cli.py upload --username sylvester-francis
 
 ```bash
 # Generate filtered datasets
-python scripts/filter_dataset.py --small    # 2k samples
-python scripts/filter_dataset.py            # 3k samples (ultra)
-python scripts/filter_dataset.py --medium   # 5k samples
+python scripts/filter_dataset.py --small # 2k samples
+python scripts/filter_dataset.py # 3k samples (ultra)
+python scripts/filter_dataset.py --medium # 5k samples
 ```
 
 ## Support
@@ -367,5 +367,5 @@ python scripts/filter_dataset.py --medium   # 5k samples
 - **Documentation**: See [README.md](../README.md)
 - **Issues**: https://github.com/sylvester-francis/slm-typescript-model/issues
 - **Training Guides**:
-  - [7B Models](TRAINING_7B.md)
-  - [Mac Training](TRAINING_MAC.md)
+- [7B Models](TRAINING_7B.md)
+- [Mac Training](TRAINING_MAC.md)

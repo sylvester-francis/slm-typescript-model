@@ -45,7 +45,7 @@ This guide covers training larger 7B parameter models for superior TypeScript co
 
 ### 1. Add Tokens to Colab Secrets
 
-Click the 🔑 icon in Colab sidebar and add:
+Click the icon in Colab sidebar and add:
 - `GITHUB_TOKEN`
 - `HF_TOKEN`
 - `STACKOVERFLOW_KEY` (optional)
@@ -69,7 +69,7 @@ drive.mount('/content/drive')
 
 Edit `colab_train_7b.py` line 31:
 ```python
-MODEL_VARIANT = "reasoning"  # Change from "standard" to "reasoning"
+MODEL_VARIANT = "reasoning" # Change from "standard" to "reasoning"
 ```
 
 Then run:
@@ -83,12 +83,12 @@ Then run:
 
 ```python
 # Configuration in colab_train_7b.py
-BATCH_SIZE = 2           # Small batch for 7B
-GRAD_ACCUM = 16          # High accumulation = effective batch 32
-LORA_R = 64              # Higher rank for 7B
-LORA_ALPHA = 128         # 2x LoRA rank
-MAX_SEQ_LENGTH = 2048    # Double the context
-LEARNING_RATE = 1e-4     # Lower LR for stability
+BATCH_SIZE = 2 # Small batch for 7B
+GRAD_ACCUM = 16 # High accumulation = effective batch 32
+LORA_R = 64 # Higher rank for 7B
+LORA_ALPHA = 128 # 2x LoRA rank
+MAX_SEQ_LENGTH = 2048 # Double the context
+LEARNING_RATE = 1e-4 # Lower LR for stability
 EPOCHS = 3
 ```
 
@@ -137,10 +137,10 @@ from peft import PeftModel
 # Load model
 base_model = "Qwen/Qwen2.5-Coder-7B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
-    base_model,
-    device_map="auto",
-    torch_dtype="auto",
-    trust_remote_code=True
+base_model,
+device_map="auto",
+torch_dtype="auto",
+trust_remote_code=True
 )
 tokenizer = AutoTokenizer.from_pretrained(base_model)
 
@@ -156,11 +156,11 @@ import React from 'react';
 
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 outputs = model.generate(
-    **inputs,
-    max_new_tokens=512,
-    temperature=0.7,
-    do_sample=True,
-    top_p=0.95
+**inputs,
+max_new_tokens=512,
+temperature=0.7,
+do_sample=True,
+top_p=0.95
 )
 
 print(tokenizer.decode(outputs[0], skip_special_tokens=True))
@@ -171,8 +171,8 @@ print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 ```python
 # Load reasoning variant
 model = PeftModel.from_pretrained(
-    model,
-    "sylvester-francis/typescript-slm-7b-reasoning"
+model,
+"sylvester-francis/typescript-slm-7b-reasoning"
 )
 
 # Prompt for reasoning
@@ -190,17 +190,17 @@ Think step by step:
 
 Edit `colab_train_7b.py` line 50:
 ```python
-DATASET = "data/processed/train.jsonl"  # Use full 8k dataset
+DATASET = "data/processed/train.jsonl" # Use full 8k dataset
 ```
 
 ### Adjust Memory Usage
 
 If you get OOM errors:
 ```python
-BATCH_SIZE = 1           # Reduce to 1
-GRAD_ACCUM = 32          # Increase to maintain effective batch
-LORA_R = 32              # Reduce rank
-MAX_SEQ_LENGTH = 1024    # Reduce context
+BATCH_SIZE = 1 # Reduce to 1
+GRAD_ACCUM = 32 # Increase to maintain effective batch
+LORA_R = 32 # Reduce rank
+MAX_SEQ_LENGTH = 1024 # Reduce context
 ```
 
 ### Use Flash Attention (Faster Training)

@@ -11,11 +11,11 @@ Copy and paste these cells directly into Google Colab to start training.
 # TypeScript SLM - Auto Setup & Update
 # ============================================================================
 
-print("🚀 TypeScript SLM - Quick Start")
+print(" TypeScript SLM - Quick Start")
 print("="*70)
 
 # Mount Google Drive
-print("\n📁 Mounting Google Drive...")
+print("\n Mounting Google Drive...")
 from google.colab import drive
 drive.mount('/content/drive', force_remount=False)
 
@@ -26,36 +26,36 @@ from pathlib import Path
 project_dir = Path('/content/drive/MyDrive/slm_code')
 
 if not project_dir.exists():
-    print("\n📥 Cloning repository...")
-    os.chdir('/content/drive/MyDrive')
-    !git clone https://github.com/sylvester-francis/slm-typescript-model.git slm_code
+print("\n Cloning repository...")
+os.chdir('/content/drive/MyDrive')
+!git clone https://github.com/sylvester-francis/slm-typescript-model.git slm_code
 else:
-    print("\n🔄 Updating repository...")
-    os.chdir(project_dir)
-    !git pull origin main
+print("\n Updating repository...")
+os.chdir(project_dir)
+!git pull origin main
 
 os.chdir(project_dir)
-print(f"✅ Working directory: {os.getcwd()}")
+print(f"[OK] Working directory: {os.getcwd()}")
 
 # Check GPU
-print("\n🎮 GPU Information:")
+print("\n GPU Information:")
 !nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 # Verify Colab Secrets
-print("\n🔑 Checking Colab Secrets...")
+print("\n Checking Colab Secrets...")
 try:
-    from google.colab import userdata
-    for secret in ['GITHUB_TOKEN', 'HF_TOKEN']:
-        try:
-            userdata.get(secret)
-            print(f"  ✅ {secret}")
-        except:
-            print(f"  ❌ {secret} - Add via 🔑 icon in sidebar")
+from google.colab import userdata
+for secret in ['GITHUB_TOKEN', 'HF_TOKEN']:
+try:
+userdata.get(secret)
+print(f" [OK] {secret}")
 except:
-    print("  ⚠️  Add GITHUB_TOKEN and HF_TOKEN to Colab Secrets")
+print(f" [ERROR] {secret} - Add via icon in sidebar")
+except:
+print(" [WARNING] Add GITHUB_TOKEN and HF_TOKEN to Colab Secrets")
 
 print("\n" + "="*70)
-print("✅ Setup complete! Run one of the training cells below:")
+print("[OK] Setup complete! Run one of the training cells below:")
 print("="*70)
 ```
 
@@ -129,19 +129,19 @@ import os
 # Find the trained model directory
 model_dirs = !ls -d models/typescript-slm-* 2>/dev/null
 if model_dirs:
-    model_dir = model_dirs[0]
-    print(f"📦 Packaging {model_dir}...")
+model_dir = model_dirs[0]
+print(f" Packaging {model_dir}...")
 
-    # Create tarball
-    !tar -czf typescript-slm-model.tar.gz {model_dir}
+# Create tarball
+!tar -czf typescript-slm-model.tar.gz {model_dir}
 
-    # Copy to Google Drive
-    !cp typescript-slm-model.tar.gz /content/drive/MyDrive/
+# Copy to Google Drive
+!cp typescript-slm-model.tar.gz /content/drive/MyDrive/
 
-    print(f"✅ Model saved to Google Drive/typescript-slm-model.tar.gz")
-    print(f"📊 Model size: {!du -h typescript-slm-model.tar.gz | cut -f1}")
+print(f"[OK] Model saved to Google Drive/typescript-slm-model.tar.gz")
+print(f" Model size: {!du -h typescript-slm-model.tar.gz | cut -f1}")
 else:
-    print("❌ No trained model found. Training may not have completed.")
+print("[ERROR] No trained model found. Training may not have completed.")
 ```
 
 ---
