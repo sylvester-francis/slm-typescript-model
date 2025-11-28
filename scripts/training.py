@@ -9,6 +9,8 @@ import argparse
 import logging
 from datetime import datetime
 import torch
+torch.backends.cuda.matmul.allow_tf32 = True  # enable TF32 for slight memory savings
+torch.backends.cudnn.benchmark = True        # let cuDNN pick efficient kernels
 import multiprocessing
 from datasets import load_dataset
 from transformers import (
@@ -127,16 +129,16 @@ def train(
     data_path="data/processed/train.jsonl",
     output_dir="./models/typescript-slm-1.5b",
     num_epochs=3,
-    batch_size=2,  # Reduced to fit GTX 1050 Ti memory
-    gradient_accumulation_steps=2,  # Reduced since batch size increased
+    batch_size=1,  # Further reduced to fit GTX 1050 Ti memory
+    gradient_accumulation_steps=16,  # Increased to keep effective batch size ~16
     learning_rate=2e-4,
-    max_seq_length=1024,
+    max_seq_length=512,
     lora_r=64,
     save_steps=500,
     logging_steps=10,
     resume_from_checkpoint=None,
     max_samples=None,
-    use_packing=True,  # Pack sequences to reduce padding
+    use_packing=False,  # Disabled packing to save memory
     dataset_num_proc=None,  # Auto-detect CPU cores
 ):
     """Main training function"""
