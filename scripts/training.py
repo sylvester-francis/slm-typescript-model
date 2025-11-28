@@ -146,6 +146,7 @@ def train(
     max_samples=None,
     use_packing=False,  # Disabled packing to save memory
     dataset_num_proc=None,  # Auto-detect CPU cores
+    force_cpu: bool = False,
 ):
     """Main training function"""
 
@@ -173,7 +174,7 @@ def train(
     logger.info("="*70)
 
     # Setup
-    device = setup_device(force_cpu=args.force_cpu)
+    device = setup_device(force_cpu=force_cpu)
     if device.type == "cuda":
         torch.cuda.empty_cache()  # Clear any leftover allocations before training
     model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
@@ -310,117 +311,103 @@ def main():
         description="Train TypeScript SLM on Mac M4",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+    # Force CPU flag (added earlier)
     parser.add_argument(
         "--force-cpu",
         action="store_true",
         help="Force training on CPU even if a GPU is available (useful for low‑VRAM GPUs)"
     )
-
+    # Low‑VRAM defaults
     parser.add_argument(
         "--model-name",
         type=str,
         default="Qwen/Qwen2.5-Coder-1.5B-Instruct",
         help="Base model name from Hugging Face"
     )
-
     parser.add_argument(
         "--data-path",
         type=str,
         default="data/processed/train.jsonl",
         help="Path to training data (JSONL file)"
     )
-
     parser.add_argument(
         "--output-dir",
         type=str,
         default="./models/typescript-slm-1.5b",
         help="Output directory for trained model"
     )
-
     parser.add_argument(
         "--epochs",
         type=int,
         default=3,
         help="Number of training epochs"
     )
-
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=8,
-        help="Training batch size per device (default: 8 for M4 24GB)"
+        default=1,
+        help="Training batch size per device (default: 1 for low‑VRAM GPU)"
     )
-
     parser.add_argument(
         "--gradient-accumulation",
         type=int,
-        default=2,
-        help="Gradient accumulation steps (default: 2 for M4)"
+        default=32,
+        help="Gradient accumulation steps (default: 32 to keep effective batch size ~32)"
     )
-
     parser.add_argument(
         "--learning-rate",
         type=float,
         default=2e-4,
         help="Learning rate"
     )
-
     parser.add_argument(
         "--max-seq-length",
         type=int,
-        default=1024,
-        help="Maximum sequence length"
+        default=128,
+        help="Maximum sequence length (reduced for low‑VRAM)"
     )
-
     parser.add_argument(
         "--lora-r",
         type=int,
         default=64,
         help="LoRA rank"
     )
-
     parser.add_argument(
         "--save-steps",
         type=int,
         default=500,
         help="Save checkpoint every N steps"
     )
-
     parser.add_argument(
         "--resume",
         type=str,
         default=None,
         help="Path to checkpoint to resume from"
     )
-
     parser.add_argument(
         "--max-samples",
         type=int,
         default=None,
         help="Limit dataset to N samples (useful for testing)"
     )
-
     parser.add_argument(
         "--use-packing",
         action="store_true",
-        default=True,
-        help="Pack multiple sequences together (default: True)"
+        default=False,
+        help="Pack multiple sequences together (default: disabled for low‑VRAM)"
     )
-
     parser.add_argument(
         "--no-packing",
         dest="use_packing",
         action="store_false",
         help="Disable sequence packing"
     )
-
     parser.add_argument(
         "--num-proc",
         type=int,
         default=None,
         help="Number of CPU cores for dataset processing (default: auto-detect)"
     )
-
     args = parser.parse_args()
 
     # Run training
@@ -439,8 +426,10 @@ def main():
         max_samples=args.max_samples,
         use_packing=args.use_packing,
         dataset_num_proc=args.num_proc,
+        force_cpu=args.force_cpu,
     )
 
 
 if __name__ == "__main__":
     main()
+```
