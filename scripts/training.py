@@ -127,7 +127,7 @@ def train(
     data_path="data/processed/train.jsonl",
     output_dir="./models/typescript-slm-1.5b",
     num_epochs=3,
-    batch_size=8,  # Increased for M4 24GB
+    batch_size=2,  # Reduced to fit GTX 1050 Ti memory
     gradient_accumulation_steps=2,  # Reduced since batch size increased
     learning_rate=2e-4,
     max_seq_length=1024,
@@ -166,6 +166,7 @@ def train(
 
     # Setup
     device = setup_device()
+    torch.cuda.empty_cache()  # Clear any leftover allocations before training
     model, tokenizer = load_model_and_tokenizer(model_name, max_seq_length)
     peft_config = setup_lora(model, lora_r=lora_r)
     dataset = load_training_data(data_path, max_samples=max_samples)
@@ -181,8 +182,8 @@ def train(
         logging_steps=logging_steps,
         learning_rate=learning_rate,
         weight_decay=0.001,
-        fp16=False,
-        bf16=True,  # Use BF16 for better precision on Apple Silicon
+        fp16=True,
+        bf16=False,  # Disabled BF16 when using fp16
         max_grad_norm=0.3,
         warmup_ratio=0.03,
         group_by_length=True,
