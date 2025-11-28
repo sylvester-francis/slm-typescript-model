@@ -81,3 +81,4 @@ runs/
 # HuggingFace cache
 .huggingface/
 hf_cache/
+*.tar.gz
