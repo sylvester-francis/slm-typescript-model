@@ -33,7 +33,7 @@ drive.mount('/content/drive')
 # - HF_TOKEN
 
 # 3. Run training (20-30 min on A100)
-!python colab_train_and_upload.py
+!python colab/colab_train_and_upload.py
 ```
 
 See [Colab Guide](docs/COLAB.md) for detailed instructions.
@@ -75,7 +75,7 @@ cp .env.example .env
 **Use Case**: Quick iteration, testing, local development
 
 ```python
-!python colab_train_and_upload.py
+!python colab/colab_train_and_upload.py
 ```
 
 ### 7B Standard Model (Best Quality)
@@ -85,7 +85,7 @@ cp .env.example .env
 **Use Case**: Production code generation
 
 ```python
-!python colab_train_7b.py
+!python colab/colab_train_7b.py
 ```
 
 ### 7B Reasoning Model (Advanced)
@@ -95,8 +95,8 @@ cp .env.example .env
 **Use Case**: Complex problem-solving, debugging, architectural decisions
 
 ```python
-# Edit colab_train_7b.py: MODEL_VARIANT = "reasoning"
-!python colab_train_7b.py
+# Edit colab/colab_train_7b.py: MODEL_VARIANT = "reasoning"
+!python colab/colab_train_7b.py
 ```
 
 ## Model Performance
@@ -182,30 +182,49 @@ python cli.py train \
 
 ```
 slm-typescript-model/
-README.md # This file
-docs/ # Documentation
-COLAB.md # Colab training guide
-TRAINING_7B.md # 7B models guide
-TRAINING_MAC.md # Mac M-series training
-MODEL_CARD.md # HuggingFace model card
-cli.py # Main CLI interface
-colab_train_and_upload.py # 1.5B automated training
-colab_train_7b.py # 7B automated training
-scripts/ # Core functionality
-training.py # Training logic
-filter_dataset.py # Dataset quality filtering
-data_collection.py # GitHub/SO data collection
-data_preprocessing.py # Data cleaning
-evaluation.py # Model evaluation
-upload_to_hf.py # HuggingFace upload
-data/
-raw/ # Raw collected data
-processed/ # Filtered training datasets
-train_small.jsonl # 2k samples (quick iteration)
-train_ultra.jsonl # 3k samples (balanced)
-train_medium.jsonl # 5k samples (recommended)
-train.jsonl # 8k samples (maximum quality)
-models/ # Trained models
+├── README.md                   # Project overview and quick start
+├── CONTRIBUTING.md             # Contribution guidelines
+├── LICENSE                     # MIT License
+├── requirements.txt            # Python dependencies (Linux/Colab)
+├── requirements-mac.txt        # Python dependencies (macOS)
+├── .env.example                # Environment variable template
+├── cli.py                      # Main CLI interface
+│
+├── colab/                      # Google Colab training scripts
+│   ├── README.md               # Colab scripts documentation
+│   ├── colab_train_and_upload.py  # 1.5B automated pipeline
+│   ├── colab_train_7b.py       # 7B advanced pipeline
+│   ├── setup_colab.py          # Environment setup
+│   ├── COLAB_CELLS.md          # Ready-to-use notebook cells
+│   └── check_cuda_compatibility.py  # GPU diagnostics
+│
+├── scripts/                    # Core training functionality
+│   ├── training.py             # Training logic and LoRA setup
+│   ├── filter_dataset.py       # Dataset quality filtering
+│   ├── data_collection.py      # GitHub/StackOverflow collection
+│   ├── data_preprocessing.py   # Data cleaning and formatting
+│   ├── evaluation.py           # Model evaluation metrics
+│   ├── upload_to_hf.py         # HuggingFace deployment
+│   └── check_environment.py    # Environment validation
+│
+├── docs/                       # Documentation
+│   ├── COLAB.md                # Complete Colab training guide
+│   ├── TRAINING_7B.md          # 7B models guide
+│   ├── TRAINING_MAC.md         # Mac M-series training
+│   └── MODEL_CARD.md           # HuggingFace model card template
+│
+├── examples/                   # Example notebooks and scripts
+│   └── README.md               # Examples documentation
+│
+├── data/                       # Training datasets (gitignored)
+│   ├── raw/                    # Raw collected data
+│   └── processed/              # Filtered training datasets
+│       ├── train_small.jsonl   # 2k samples (quick iteration)
+│       ├── train_ultra.jsonl   # 3k samples (balanced)
+│       ├── train_medium.jsonl  # 5k samples (recommended)
+│       └── train.jsonl         # 8k samples (maximum quality)
+│
+└── models/                     # Trained models (gitignored)
 ```
 
 ## Documentation
