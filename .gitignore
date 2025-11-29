@@ -82,3 +82,4 @@ runs/
 .huggingface/
 hf_cache/
 *.tar.gz
+docs/medium-article.md
